@@ -1,0 +1,164 @@
+{
+  "extensionName": {
+    "message": "Identiti — dữ liệu đăng nhập trang"
+  },
+  "extensionDescription": {
+    "message": "Xuất/nhập cookie, local & session storage, IndexedDB, tùy chọn mã hóa AES bằng mật khẩu. Chrome & Firefox."
+  },
+  "actionTitle": {
+    "message": "Identiti — xuất / nhập dữ liệu trang"
+  },
+  "heading": {
+    "message": "Identiti"
+  },
+  "tabExport": {
+    "message": "Xuất"
+  },
+  "tabImport": {
+    "message": "Nhập"
+  },
+  "currentSite": {
+    "message": "Tab đang mở: $1"
+  },
+  "restrictedPage": {
+    "message": "Không truy cập được trang này (ví dụ trang nội bộ trình duyệt). Hãy mở tab http(s) thông thường."
+  },
+  "noTab": {
+    "message": "Không tìm thấy tab đang hoạt động."
+  },
+  "loadError": {
+    "message": "Không tải được dữ liệu: $1"
+  },
+  "sectionCookies": {
+    "message": "Cookie"
+  },
+  "sectionLocalStorage": {
+    "message": "Local storage"
+  },
+  "sectionSessionStorage": {
+    "message": "Session storage"
+  },
+  "sectionIndexedDB": {
+    "message": "IndexedDB"
+  },
+  "selectAll": {
+    "message": "Tất cả"
+  },
+  "selectNone": {
+    "message": "Bỏ chọn"
+  },
+  "searchPlaceholder": {
+    "message": "Lọc theo tên…"
+  },
+  "countSummaryFull": {
+    "message": "$1 cookie · $2 local · $3 session · $4 dòng IDB"
+  },
+  "countItems": {
+    "message": "$1 mục"
+  },
+  "viewDetails": {
+    "message": "Xem chi tiết"
+  },
+  "exportButton": {
+    "message": "Tải JSON"
+  },
+  "exportNothingSelected": {
+    "message": "Chọn ít nhất một mục để xuất."
+  },
+  "exportDone": {
+    "message": "Đã xuất — kiểm tra thư mục tải xuống."
+  },
+  "importPickFile": {
+    "message": "Chọn file sao lưu"
+  },
+  "importParseError": {
+    "message": "File không hợp lệ. Dùng file JSON do extension này xuất."
+  },
+  "importApply": {
+    "message": "Áp dụng vào tab này"
+  },
+  "importNothingSelected": {
+    "message": "Chọn mục cần nhập."
+  },
+  "importDone": {
+    "message": "Đã nhập xong. Tải lại trang nếu site chưa nhận thay đổi."
+  },
+  "importPartialFail": {
+    "message": "Một số mục không áp dụng được. Thử tải lại tab."
+  },
+  "originMismatchTitle": {
+    "message": "Khác trang"
+  },
+  "originMismatchBody": {
+    "message": "File sao lưu cho $1 nhưng tab hiện tại là $2. Nhập có thể không đúng ý."
+  },
+  "originUnknown": {
+    "message": "Trang không xác định"
+  },
+  "confirmImportTitle": {
+    "message": "Ghi đè dữ liệu?"
+  },
+  "confirmImportBody": {
+    "message": "Cookie, khóa storage và bản ghi IndexedDB đã chọn sẽ được tạo hoặc thay thế cho trang này."
+  },
+  "cancel": {
+    "message": "Hủy"
+  },
+  "continue": {
+    "message": "Tiếp tục"
+  },
+  "privacyNote": {
+    "message": "File xuất chứa thông tin nhạy cảm. Giữ an toàn."
+  },
+  "idbBlobNote": {
+    "message": "Blob được đọc thêm ở bước sau nếu được; blob quá lớn hoặc không đọc được có thể bị bỏ qua."
+  },
+  "emptyCookies": {
+    "message": "Không có cookie cho URL này."
+  },
+  "emptyLocalStorage": {
+    "message": "Không có khóa trong local storage."
+  },
+  "emptySessionStorage": {
+    "message": "Không có khóa trong session storage."
+  },
+  "emptyIndexedDB": {
+    "message": "Không có IndexedDB cho origin này."
+  },
+  "loading": {
+    "message": "Đang tải…"
+  },
+  "cookieLabel": {
+    "message": "$1 · $2"
+  },
+  "reloadSuggestion": {
+    "message": "Gợi ý: tải lại trang sau khi nhập."
+  },
+  "encryptFile": {
+    "message": "Mã hóa file bằng mật khẩu (AES-GCM)"
+  },
+  "exportPassword": {
+    "message": "Mật khẩu"
+  },
+  "exportPasswordConfirm": {
+    "message": "Xác nhận mật khẩu"
+  },
+  "passwordMismatch": {
+    "message": "Hai mật khẩu không khớp."
+  },
+  "encryptedNeedPassword": {
+    "message": "File đã mã hóa. Nhập mật khẩu bên dưới."
+  },
+  "encryptedFileHelp": {
+    "message": "PBKDF2 + AES-GCM (cùng cài đặt khi xuất). Sai mật khẩu sẽ không giải mã được."
+  },
+  "importPassword": {
+    "message": "Mật khẩu giải mã"
+  },
+  "decryptImport": {
+    "message": "Giải mã và xem trước"
+  },
+  "decryptFailed": {
+    "message": "Không giải mã được. Kiểm tra mật khẩu."
+  }
+}
