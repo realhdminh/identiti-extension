@@ -1,0 +1,164 @@
+{
+  "extensionName": {
+    "message": "Identiti — site credentials"
+  },
+  "extensionDescription": {
+    "message": "Export and import cookies, local & session storage, IndexedDB, with optional AES password protection. Chrome & Firefox."
+  },
+  "actionTitle": {
+    "message": "Identiti — export / import site data"
+  },
+  "heading": {
+    "message": "Identiti"
+  },
+  "tabExport": {
+    "message": "Export"
+  },
+  "tabImport": {
+    "message": "Import"
+  },
+  "currentSite": {
+    "message": "Active tab: $1"
+  },
+  "restrictedPage": {
+    "message": "This page cannot be accessed (e.g. browser internal pages). Open a normal http(s) tab."
+  },
+  "noTab": {
+    "message": "No active tab found."
+  },
+  "loadError": {
+    "message": "Could not load data: $1"
+  },
+  "sectionCookies": {
+    "message": "Cookies"
+  },
+  "sectionLocalStorage": {
+    "message": "Local storage"
+  },
+  "sectionSessionStorage": {
+    "message": "Session storage"
+  },
+  "sectionIndexedDB": {
+    "message": "IndexedDB"
+  },
+  "selectAll": {
+    "message": "All"
+  },
+  "selectNone": {
+    "message": "None"
+  },
+  "searchPlaceholder": {
+    "message": "Filter by name…"
+  },
+  "countSummaryFull": {
+    "message": "$1 cookies · $2 local · $3 session · $4 IDB rows"
+  },
+  "countItems": {
+    "message": "$1 items"
+  },
+  "viewDetails": {
+    "message": "View details"
+  },
+  "exportButton": {
+    "message": "Download JSON"
+  },
+  "exportNothingSelected": {
+    "message": "Select at least one item to export."
+  },
+  "exportDone": {
+    "message": "Export ready — check your downloads."
+  },
+  "importPickFile": {
+    "message": "Choose backup file"
+  },
+  "importParseError": {
+    "message": "Invalid file. Use a JSON export from this extension."
+  },
+  "importApply": {
+    "message": "Apply to this tab"
+  },
+  "importNothingSelected": {
+    "message": "Select items to import."
+  },
+  "importDone": {
+    "message": "Import finished. Reload the page if the site does not pick up changes."
+  },
+  "importPartialFail": {
+    "message": "Some items could not be applied. Try reloading the tab."
+  },
+  "originMismatchTitle": {
+    "message": "Different site"
+  },
+  "originMismatchBody": {
+    "message": "Backup is for $1 but this tab is $2. Import may not work as expected."
+  },
+  "originUnknown": {
+    "message": "Unknown site"
+  },
+  "confirmImportTitle": {
+    "message": "Overwrite data?"
+  },
+  "confirmImportBody": {
+    "message": "Selected cookies, storage keys, and IndexedDB rows will be created or replaced for this site."
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "privacyNote": {
+    "message": "Exports contain sensitive site data. Store files safely."
+  },
+  "idbBlobNote": {
+    "message": "Blobs are read in a second pass when possible; huge or opaque blobs may still be skipped."
+  },
+  "emptyCookies": {
+    "message": "No cookies for this URL."
+  },
+  "emptyLocalStorage": {
+    "message": "No keys in local storage."
+  },
+  "emptySessionStorage": {
+    "message": "No keys in session storage."
+  },
+  "emptyIndexedDB": {
+    "message": "No IndexedDB data for this origin."
+  },
+  "loading": {
+    "message": "Loading…"
+  },
+  "cookieLabel": {
+    "message": "$1 · $2"
+  },
+  "reloadSuggestion": {
+    "message": "Tip: reload the page after import."
+  },
+  "encryptFile": {
+    "message": "Encrypt file with password (AES-GCM)"
+  },
+  "exportPassword": {
+    "message": "Password"
+  },
+  "exportPasswordConfirm": {
+    "message": "Confirm password"
+  },
+  "passwordMismatch": {
+    "message": "Passwords do not match."
+  },
+  "encryptedNeedPassword": {
+    "message": "This file is encrypted. Enter the password below."
+  },
+  "encryptedFileHelp": {
+    "message": "PBKDF2 + AES-GCM (same settings as export). Wrong password will fail to decrypt."
+  },
+  "importPassword": {
+    "message": "Decryption password"
+  },
+  "decryptImport": {
+    "message": "Decrypt and preview"
+  },
+  "decryptFailed": {
+    "message": "Could not decrypt. Check the password."
+  }
+}
