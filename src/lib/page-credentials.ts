@@ -1,6 +1,7 @@
 import type { Browser } from "wxt/browser"
 import type { IndexedDBExport } from "@/lib/indexeddb"
 import { filterIndexedDBExport, idbRecordId } from "@/lib/indexeddb"
+import { sendMessage } from "@/lib/messaging"
 import { isRecord, isStringRecord } from "@/lib/type-guards"
 
 export const EXPORT_SCHEMA_VERSION = 2 as const
@@ -23,87 +24,6 @@ export type CredentialExportFile = {
   localStorage: Record<string, string>
   sessionStorage: Record<string, string>
   indexedDB: IndexedDBExport
-}
-
-export const MESSAGE_LS_GET = "identiti:ls-get" as const
-export const MESSAGE_LS_SET = "identiti:ls-set" as const
-export const MESSAGE_SS_GET = "identiti:ss-get" as const
-export const MESSAGE_SS_SET = "identiti:ss-set" as const
-export const MESSAGE_IDB_DUMP = "identiti:idb-dump" as const
-export const MESSAGE_IDB_APPLY = "identiti:idb-apply" as const
-export const MESSAGE_IDB_MERGE = "identiti:idb-merge" as const
-
-export type MessageLsSet = {
-  type: typeof MESSAGE_LS_SET
-  entries: Record<string, string>
-}
-export type MessageSsSet = {
-  type: typeof MESSAGE_SS_SET
-  entries: Record<string, string>
-}
-export type MessageIdbApply = {
-  type: typeof MESSAGE_IDB_APPLY
-  snapshot: IndexedDBExport
-}
-export type MessageIdbMerge = {
-  type: typeof MESSAGE_IDB_MERGE
-  snapshot: IndexedDBExport
-}
-
-type TabStorageResponse =
-  | { ok: true; entries: Record<string, string> }
-  | { ok: false; error: string }
-
-type TabOkResponse = { ok: true } | { ok: false; error: string }
-
-type TabIdbDumpResponse =
-  | { ok: true; data: IndexedDBExport }
-  | { ok: false; error: string }
-
-function isIndexedDBExportLike(x: unknown): x is IndexedDBExport {
-  if (!isRecord(x)) return false
-  for (const v of Object.values(x)) {
-    if (!isRecord(v)) return false
-    if (typeof v.version !== "number") return false
-    if (!Array.isArray(v.stores)) return false
-  }
-  return true
-}
-
-export function isMessageLsSet(m: unknown): m is MessageLsSet {
-  return (
-    isRecord(m) &&
-    m.type === MESSAGE_LS_SET &&
-    "entries" in m &&
-    isStringRecord(m.entries)
-  )
-}
-
-export function isMessageSsSet(m: unknown): m is MessageSsSet {
-  return (
-    isRecord(m) &&
-    m.type === MESSAGE_SS_SET &&
-    "entries" in m &&
-    isStringRecord(m.entries)
-  )
-}
-
-export function isMessageIdbApply(m: unknown): m is MessageIdbApply {
-  return (
-    isRecord(m) &&
-    m.type === MESSAGE_IDB_APPLY &&
-    "snapshot" in m &&
-    isIndexedDBExportLike(m.snapshot)
-  )
-}
-
-export function isMessageIdbMerge(m: unknown): m is MessageIdbMerge {
-  return (
-    isRecord(m) &&
-    m.type === MESSAGE_IDB_MERGE &&
-    "snapshot" in m &&
-    isIndexedDBExportLike(m.snapshot)
-  )
 }
 
 function assertIdentitiVersion(v: unknown): asserts v is 1 | 2 {
@@ -469,26 +389,23 @@ export async function readPageLocalStorage(
   tabId: number
 ): Promise<Record<string, string>> {
   try {
-    const res = (await browser.tabs.sendMessage(tabId, {
-      type: MESSAGE_LS_GET,
-    })) as TabStorageResponse
-    if (res?.ok) return res.entries
+    const res = await sendMessage("ls-get", undefined, tabId)
+    if (res?.ok && res.entries) return res.entries
   } catch {
-    /* fall through */
+    /* fall through to scripting */
   }
-  return runScriptInTab(tabId, collectLocalStorageFromWindow)
+  return (await runScriptInTab(tabId, collectLocalStorageFromWindow)) ?? {}
 }
 
 export async function writePageLocalStorage(
   tabId: number,
   entries: Record<string, string>
 ): Promise<void> {
-  const msg: MessageLsSet = { type: MESSAGE_LS_SET, entries }
   try {
-    const res = (await browser.tabs.sendMessage(tabId, msg)) as TabOkResponse
+    const res = await sendMessage("ls-set", { entries }, tabId)
     if (res?.ok) return
   } catch {
-    /* fall through */
+    /* fall through to scripting */
   }
   await runScriptInTab(tabId, injectApplyLocalStorage, [entries])
 }
@@ -497,26 +414,23 @@ export async function readPageSessionStorage(
   tabId: number
 ): Promise<Record<string, string>> {
   try {
-    const res = (await browser.tabs.sendMessage(tabId, {
-      type: MESSAGE_SS_GET,
-    })) as TabStorageResponse
-    if (res?.ok) return res.entries
+    const res = await sendMessage("ss-get", undefined, tabId)
+    if (res?.ok && res.entries) return res.entries
   } catch {
-    /* fall through */
+    /* fall through to scripting */
   }
-  return runScriptInTab(tabId, collectSessionStorageFromWindow)
+  return (await runScriptInTab(tabId, collectSessionStorageFromWindow)) ?? {}
 }
 
 export async function writePageSessionStorage(
   tabId: number,
   entries: Record<string, string>
 ): Promise<void> {
-  const msg: MessageSsSet = { type: MESSAGE_SS_SET, entries }
   try {
-    const res = (await browser.tabs.sendMessage(tabId, msg)) as TabOkResponse
+    const res = await sendMessage("ss-set", { entries }, tabId)
     if (res?.ok) return
   } catch {
-    /* fall through */
+    /* fall through to scripting */
   }
   await runScriptInTab(tabId, injectApplySessionStorage, [entries])
 }
@@ -524,21 +438,20 @@ export async function writePageSessionStorage(
 export async function readPageIndexedDB(
   tabId: number
 ): Promise<IndexedDBExport> {
-  const res = (await browser.tabs.sendMessage(tabId, {
-    type: MESSAGE_IDB_DUMP,
-  })) as TabIdbDumpResponse
+  const res = await sendMessage("idb-dump", undefined, tabId)
   if (!res?.ok) {
-    throw new Error(res?.error ?? "IDB_DUMP_FAILED")
+    throw new Error(
+      (res && "error" in res ? res.error : undefined) ?? "IDB_DUMP_FAILED"
+    )
   }
-  return res.data
+  return res.data ?? {}
 }
 
 export async function applyPageIndexedDBOnTab(
   tabId: number,
   snapshot: IndexedDBExport
 ): Promise<void> {
-  const msg: MessageIdbApply = { type: MESSAGE_IDB_APPLY, snapshot }
-  const res = (await browser.tabs.sendMessage(tabId, msg)) as TabOkResponse
+  const res = await sendMessage("idb-apply", { snapshot }, tabId)
   if (!res?.ok) {
     throw new Error(res?.error ?? "IDB_APPLY_FAILED")
   }
@@ -548,8 +461,7 @@ export async function mergePageIndexedDBOnTab(
   tabId: number,
   snapshot: IndexedDBExport
 ): Promise<void> {
-  const msg: MessageIdbMerge = { type: MESSAGE_IDB_MERGE, snapshot }
-  const res = (await browser.tabs.sendMessage(tabId, msg)) as TabOkResponse
+  const res = await sendMessage("idb-merge", { snapshot }, tabId)
   if (!res?.ok) {
     throw new Error(res?.error ?? "IDB_MERGE_FAILED")
   }

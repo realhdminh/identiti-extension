@@ -3,132 +3,110 @@ import {
   dumpPageIndexedDB,
   mergePageIndexedDBRecords,
 } from "@/lib/indexeddb"
-import {
-  isMessageIdbApply,
-  isMessageIdbMerge,
-  isMessageLsSet,
-  isMessageSsSet,
-  MESSAGE_IDB_DUMP,
-  MESSAGE_LS_GET,
-  MESSAGE_SS_GET,
-} from "@/lib/page-credentials"
+import { onMessage } from "@/lib/messaging"
 
 export default defineContentScript({
   matches: ["<all_urls>"],
   runAt: "document_idle",
-  main() {
-    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message?.type === MESSAGE_LS_GET) {
-        try {
-          const entries: Record<string, string> = {}
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i)
-            if (k) entries[k] = localStorage.getItem(k) ?? ""
-          }
-          sendResponse({ ok: true, entries })
-        } catch (e) {
-          sendResponse({
-            ok: false,
-            error: e instanceof Error ? e.message : String(e),
-          })
+  main(ctx) {
+    onMessage("ls-get", () => {
+      try {
+        const entries: Record<string, string> = {}
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (k) entries[k] = localStorage.getItem(k) ?? ""
         }
-        return true
-      }
-
-      if (isMessageLsSet(message)) {
-        const { entries } = message
-        try {
-          for (const [k, v] of Object.entries(entries)) {
-            localStorage.setItem(k, v)
-          }
-          sendResponse({ ok: true })
-        } catch (e) {
-          sendResponse({
-            ok: false,
-            error: e instanceof Error ? e.message : String(e),
-          })
+        return { ok: true as const, entries }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
         }
-        return true
       }
+    })
 
-      if (message?.type === MESSAGE_SS_GET) {
-        try {
-          const entries: Record<string, string> = {}
-          for (let i = 0; i < sessionStorage.length; i++) {
-            const k = sessionStorage.key(i)
-            if (k) entries[k] = sessionStorage.getItem(k) ?? ""
-          }
-          sendResponse({ ok: true, entries })
-        } catch (e) {
-          sendResponse({
-            ok: false,
-            error: e instanceof Error ? e.message : String(e),
-          })
+    onMessage("ls-set", ({ data }) => {
+      try {
+        for (const [k, v] of Object.entries(data.entries)) {
+          localStorage.setItem(k, v)
         }
-        return true
-      }
-
-      if (isMessageSsSet(message)) {
-        const { entries } = message
-        try {
-          for (const [k, v] of Object.entries(entries)) {
-            sessionStorage.setItem(k, v)
-          }
-          sendResponse({ ok: true })
-        } catch (e) {
-          sendResponse({
-            ok: false,
-            error: e instanceof Error ? e.message : String(e),
-          })
+        return { ok: true as const }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
         }
-        return true
       }
+    })
 
-      if (message?.type === MESSAGE_IDB_DUMP) {
-        void dumpPageIndexedDB()
-          .then((data) => {
-            sendResponse({ ok: true, data })
-          })
-          .catch((e) => {
-            sendResponse({
-              ok: false,
-              error: e instanceof Error ? e.message : String(e),
-            })
-          })
-        return true
+    onMessage("ss-get", () => {
+      try {
+        const entries: Record<string, string> = {}
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i)
+          if (k) entries[k] = sessionStorage.getItem(k) ?? ""
+        }
+        return { ok: true as const, entries }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
+        }
       }
+    })
 
-      if (isMessageIdbApply(message)) {
-        const { snapshot } = message
-        void applyPageIndexedDB(snapshot)
-          .then(() => {
-            sendResponse({ ok: true })
-          })
-          .catch((e) => {
-            sendResponse({
-              ok: false,
-              error: e instanceof Error ? e.message : String(e),
-            })
-          })
-        return true
+    onMessage("ss-set", ({ data }) => {
+      try {
+        for (const [k, v] of Object.entries(data.entries)) {
+          sessionStorage.setItem(k, v)
+        }
+        return { ok: true as const }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
+        }
       }
+    })
 
-      if (isMessageIdbMerge(message)) {
-        const { snapshot } = message
-        void mergePageIndexedDBRecords(snapshot)
-          .then(() => {
-            sendResponse({ ok: true })
-          })
-          .catch((e) => {
-            sendResponse({
-              ok: false,
-              error: e instanceof Error ? e.message : String(e),
-            })
-          })
-        return true
+    onMessage("idb-dump", async () => {
+      try {
+        const data = await dumpPageIndexedDB()
+        return { ok: true as const, data }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
+        }
       }
+    })
 
-      return undefined
+    onMessage("idb-apply", async ({ data }) => {
+      try {
+        await applyPageIndexedDB(data.snapshot)
+        return { ok: true as const }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
+        }
+      }
+    })
+
+    onMessage("idb-merge", async ({ data }) => {
+      try {
+        await mergePageIndexedDBRecords(data.snapshot)
+        return { ok: true as const }
+      } catch (e) {
+        return {
+          ok: false as const,
+          error: e instanceof Error ? e.message : String(e),
+        }
+      }
+    })
+
+    ctx.onInvalidated(() => {
+      // Extension was updated -- listeners auto-cleaned up by @webext-core/messaging
     })
   },
 })

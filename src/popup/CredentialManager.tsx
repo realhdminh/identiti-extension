@@ -1,4 +1,4 @@
-import { IconDownload, IconUpload } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconDownload, IconUpload } from "@tabler/icons-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -10,10 +10,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { isSupportedWebUrl } from "@/lib/page-credentials"
 import { ExportTab } from "@/popup/credential-manager/ExportTab"
 import { ImportTab } from "@/popup/credential-manager/ImportTab"
+import { ProfilesTab } from "@/popup/credential-manager/ProfilesTab"
 import { useCredentialManagerState } from "@/popup/credential-manager/useCredentialManagerState"
 
 export function CredentialManager() {
@@ -50,13 +52,25 @@ export function CredentialManager() {
       )}
 
       <Tabs
-        defaultValue="export"
+        defaultValue={s.profiles.length > 0 ? "profiles" : "export"}
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden"
       >
         <TabsList
           variant="line"
           className="w-full shrink-0 justify-stretch gap-0"
         >
+          <TabsTrigger value="profiles" className="flex-1 gap-1">
+            <IconDeviceFloppy className="size-3.5 opacity-70" />
+            {browser.i18n.getMessage("tabProfiles")}
+            {s.profiles.length > 0 && (
+              <Badge
+                variant="secondary"
+                className="ml-0.5 h-4 min-w-4 px-1 text-[9px]"
+              >
+                {s.profiles.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="export" className="flex-1 gap-1">
             <IconDownload className="size-3.5 opacity-70" />
             {browser.i18n.getMessage("tabExport")}
@@ -66,6 +80,22 @@ export function CredentialManager() {
             {browser.i18n.getMessage("tabImport")}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent
+          value="profiles"
+          className="mt-0 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden data-[state=inactive]:hidden"
+        >
+          <ProfilesTab
+            tabUrl={s.tabUrl}
+            tabId={s.tabId}
+            profiles={s.profiles}
+            profileBusy={s.profileBusy}
+            onSave={s.saveCurrentAsProfile}
+            onRestore={s.restoreProfile}
+            onDelete={s.deleteProfileById}
+            onRename={s.renameProfileById}
+          />
+        </TabsContent>
 
         <TabsContent
           value="export"
@@ -94,6 +124,8 @@ export function CredentialManager() {
             exportPass2={s.exportPass2}
             setExportPass2={s.setExportPass2}
             onExport={s.exportJson}
+            onSaveAsProfile={s.saveCurrentAsProfile}
+            profileBusy={s.profileBusy}
           />
         </TabsContent>
 

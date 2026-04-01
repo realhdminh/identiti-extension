@@ -1,6 +1,7 @@
 import {
   IconCookie,
   IconDatabase,
+  IconDeviceFloppy,
   IconDownload,
   IconLayersSubtract,
 } from "@tabler/icons-react"
@@ -64,6 +65,8 @@ export type ExportTabProps = {
   exportPass2: string
   setExportPass2: (v: string) => void
   onExport: () => void | Promise<void>
+  onSaveAsProfile: (name: string) => void | Promise<void>
+  profileBusy: boolean
 }
 
 export function ExportTab({
@@ -89,6 +92,8 @@ export function ExportTab({
   exportPass2,
   setExportPass2,
   onExport,
+  onSaveAsProfile,
+  profileBusy,
 }: ExportTabProps) {
   const exportPasswordSchema = z
     .object({
@@ -120,6 +125,7 @@ export function ExportTab({
 
   const [cookiesOpen, setCookiesOpen] = useState(false)
   const [idbOpen, setIdbOpen] = useState(false)
+  const [quickProfileName, setQuickProfileName] = useState("")
 
   if (!isSupportedWebUrl(tabUrl)) {
     return null
@@ -520,6 +526,34 @@ export function ExportTab({
             </Button>
           )}
         </passwordForm.Subscribe>
+        <div className="flex items-center gap-1.5">
+          <Input
+            className="h-7 flex-1 text-xs"
+            placeholder={browser.i18n.getMessage("profileNamePlaceholder")}
+            value={quickProfileName}
+            onChange={(e) => setQuickProfileName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && quickProfileName.trim()) {
+                void onSaveAsProfile(quickProfileName.trim())
+                setQuickProfileName("")
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="shrink-0 gap-1"
+            disabled={profileBusy || !quickProfileName.trim()}
+            onClick={() => {
+              void onSaveAsProfile(quickProfileName.trim())
+              setQuickProfileName("")
+            }}
+          >
+            <IconDeviceFloppy className="size-3.5" />
+            {browser.i18n.getMessage("profileSaveAsProfile")}
+          </Button>
+        </div>
       </div>
     </>
   )
