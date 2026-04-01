@@ -30,6 +30,15 @@ import {
   writePageLocalStorage,
   writePageSessionStorage,
 } from "@/lib/page-credentials"
+import {
+  type CredentialProfile,
+  deleteProfile,
+  listProfilesForOrigin,
+  loadProfile,
+  type ProfileIndexEntry,
+  renameProfile,
+  saveProfile,
+} from "@/lib/profiles"
 import { slugForFilename } from "@/popup/lib/format"
 import { lsKeyId, ssKeyId } from "@/popup/lib/selection-ids"
 
@@ -56,6 +65,8 @@ export function useCredentialManagerState() {
   const [importEnvelope, setImportEnvelope] =
     useState<IdentitiEncryptedEnvelope | null>(null)
   const [importDecryptPass, setImportDecryptPass] = useState("")
+  const [profiles, setProfiles] = useState<ProfileIndexEntry[]>([])
+  const [profileBusy, setProfileBusy] = useState(false)
 
   const origin =
     tabUrl && isSupportedWebUrl(tabUrl) ? originFromUrl(tabUrl) : null
@@ -96,23 +107,26 @@ export function useCredentialManagerState() {
         return
       }
 
-      const [ck, storage, sess, idb] = await Promise.all([
+      const [ck, ls, ss, idb] = await Promise.all([
         getCookiesForUrl(tab.url, tab.id),
         readPageLocalStorage(tab.id).catch(() => ({})),
         readPageSessionStorage(tab.id).catch(() => ({})),
         readPageIndexedDB(tab.id).catch(() => ({}) as IndexedDBExport),
       ])
+      const safeLs = ls ?? {}
+      const safeSs = ss ?? {}
+      const safeIdb = idb ?? {}
 
       setCookies(ck)
-      setLsEntries(storage)
-      setSsEntries(sess)
-      setIdbData(idb)
+      setLsEntries(safeLs)
+      setSsEntries(safeSs)
+      setIdbData(safeIdb)
 
       const next = new Set<string>()
       for (const c of ck) next.add(cookieRowId(c))
-      for (const k of Object.keys(storage)) next.add(lsKeyId(k))
-      for (const k of Object.keys(sess)) next.add(ssKeyId(k))
-      for (const row of flattenIdbForUi(idb)) next.add(row.id)
+      for (const k of Object.keys(safeLs)) next.add(lsKeyId(k))
+      for (const k of Object.keys(safeSs)) next.add(ssKeyId(k))
+      for (const row of flattenIdbForUi(safeIdb)) next.add(row.id)
       setSelected(next)
     } catch (e) {
       setError(
@@ -131,9 +145,26 @@ export function useCredentialManagerState() {
     }
   }, [])
 
+  const refreshProfiles = useCallback(async () => {
+    if (!origin) {
+      setProfiles([])
+      return
+    }
+    try {
+      const list = await listProfilesForOrigin(origin)
+      setProfiles(list)
+    } catch {
+      setProfiles([])
+    }
+  }, [origin])
+
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  useEffect(() => {
+    void refreshProfiles()
+  }, [refreshProfiles])
 
   const filterLower = filter.trim().toLowerCase()
 
@@ -404,6 +435,126 @@ export function useCredentialManagerState() {
     }
   }, [importPayload, tabId, tabUrl, importSelected, refresh])
 
+  const saveCurrentAsProfile = useCallback(
+    async (name: string) => {
+      if (!origin || !tabUrl) return
+      setProfileBusy(true)
+      try {
+        const profile: CredentialProfile = {
+          id: crypto.randomUUID(),
+          name,
+          origin,
+          pageUrl: tabUrl,
+          savedAt: new Date().toISOString(),
+          cookies,
+          localStorage: lsEntries,
+          sessionStorage: ssEntries,
+          indexedDB: idbData,
+        }
+        await saveProfile(profile)
+        await refreshProfiles()
+        toast.success(browser.i18n.getMessage("profileSaved"))
+      } catch (e) {
+        toast.error(
+          browser.i18n.getMessage(
+            "loadError",
+            e instanceof Error ? e.message : String(e)
+          )
+        )
+      } finally {
+        setProfileBusy(false)
+      }
+    },
+    [origin, tabUrl, cookies, lsEntries, ssEntries, idbData, refreshProfiles]
+  )
+
+  const restoreProfile = useCallback(
+    async (profileId: string) => {
+      if (tabId == null || !tabUrl || !isSupportedWebUrl(tabUrl)) return
+      setProfileBusy(true)
+      try {
+        const profile = await loadProfile(profileId)
+        if (!profile) return
+        let cookieFail = 0
+        for (const c of profile.cookies) {
+          try {
+            await setCookieOnTab(tabUrl, c)
+          } catch {
+            cookieFail++
+          }
+        }
+        if (Object.keys(profile.localStorage).length > 0) {
+          await writePageLocalStorage(tabId, profile.localStorage)
+        }
+        if (Object.keys(profile.sessionStorage).length > 0) {
+          await writePageSessionStorage(tabId, profile.sessionStorage)
+        }
+        const idbKeys = Object.keys(profile.indexedDB)
+        if (idbKeys.length > 0) {
+          await applyPageIndexedDBOnTab(tabId, profile.indexedDB)
+        }
+        if (cookieFail > 0) {
+          toast.warning(browser.i18n.getMessage("profileRestorePartialFail"))
+        } else {
+          toast.success(browser.i18n.getMessage("profileRestored"))
+        }
+        await refresh()
+      } catch (e) {
+        toast.error(
+          browser.i18n.getMessage(
+            "loadError",
+            e instanceof Error ? e.message : String(e)
+          )
+        )
+      } finally {
+        setProfileBusy(false)
+      }
+    },
+    [tabId, tabUrl, refresh]
+  )
+
+  const deleteProfileById = useCallback(
+    async (profileId: string) => {
+      setProfileBusy(true)
+      try {
+        await deleteProfile(profileId)
+        await refreshProfiles()
+        toast.success(browser.i18n.getMessage("profileDeleted"))
+      } catch (e) {
+        toast.error(
+          browser.i18n.getMessage(
+            "loadError",
+            e instanceof Error ? e.message : String(e)
+          )
+        )
+      } finally {
+        setProfileBusy(false)
+      }
+    },
+    [refreshProfiles]
+  )
+
+  const renameProfileById = useCallback(
+    async (profileId: string, name: string) => {
+      setProfileBusy(true)
+      try {
+        await renameProfile(profileId, name)
+        await refreshProfiles()
+        toast.success(browser.i18n.getMessage("profileRenamed"))
+      } catch (e) {
+        toast.error(
+          browser.i18n.getMessage(
+            "loadError",
+            e instanceof Error ? e.message : String(e)
+          )
+        )
+      } finally {
+        setProfileBusy(false)
+      }
+    },
+    [refreshProfiles]
+  )
+
   const originMismatch = Boolean(
     importPayload && origin && importPayload.origin !== origin
   )
@@ -450,5 +601,11 @@ export function useCredentialManagerState() {
     filteredSsKeys,
     filteredIdbRows,
     idbRows,
+    profiles,
+    profileBusy,
+    saveCurrentAsProfile,
+    restoreProfile,
+    deleteProfileById,
+    renameProfileById,
   }
 }

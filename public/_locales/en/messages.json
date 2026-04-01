@@ -160,5 +160,71 @@
   },
   "decryptFailed": {
     "message": "Could not decrypt. Check the password."
+  },
+  "tabProfiles": {
+    "message": "Profiles"
+  },
+  "profilesEmpty": {
+    "message": "No saved profiles for this site yet."
+  },
+  "profilesEmptyHint": {
+    "message": "Save the current site credentials as a profile to quickly restore them later."
+  },
+  "profileSaveCurrent": {
+    "message": "Save current as profile"
+  },
+  "profileSaveAsProfile": {
+    "message": "Save as profile"
+  },
+  "profileNamePlaceholder": {
+    "message": "Profile name"
+  },
+  "profileSaved": {
+    "message": "Profile saved."
+  },
+  "profileRestore": {
+    "message": "Restore"
+  },
+  "profileRestored": {
+    "message": "Profile restored. Reload the page if the site does not pick up changes."
+  },
+  "profileRestorePartialFail": {
+    "message": "Some items could not be restored. Try reloading the tab."
+  },
+  "profileDelete": {
+    "message": "Delete"
+  },
+  "profileDeleted": {
+    "message": "Profile deleted."
+  },
+  "profileRename": {
+    "message": "Rename"
+  },
+  "profileRenamed": {
+    "message": "Profile renamed."
+  },
+  "profileConfirmDeleteTitle": {
+    "message": "Delete profile?"
+  },
+  "profileConfirmDeleteBody": {
+    "message": "This will permanently delete the saved profile \"$1\"."
+  },
+  "profileConfirmRestoreTitle": {
+    "message": "Restore profile?"
+  },
+  "profileConfirmRestoreBody": {
+    "message": "Cookies, storage keys, and IndexedDB data from this profile will be applied to the current tab."
+  },
+  "profileItemCounts": {
+    "message": "$1 cookies · $2 local · $3 session · $4 IDB"
+  },
+  "profileSavedAt": {
+    "message": "Saved $1"
+  },
+  "ctxMenuSaveProfile": {
+    "message": "Save site credentials (Identiti)"
+  },
+  "profileNameRequired": {
+    "message": "Enter a name for this profile."
   }
 }

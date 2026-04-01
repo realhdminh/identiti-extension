@@ -160,5 +160,71 @@
   },
   "decryptFailed": {
     "message": "Không giải mã được. Kiểm tra mật khẩu."
+  },
+  "tabProfiles": {
+    "message": "Hồ sơ"
+  },
+  "profilesEmpty": {
+    "message": "Chưa có hồ sơ nào cho trang này."
+  },
+  "profilesEmptyHint": {
+    "message": "Lưu thông tin đăng nhập hiện tại thành hồ sơ để khôi phục nhanh sau này."
+  },
+  "profileSaveCurrent": {
+    "message": "Lưu thành hồ sơ"
+  },
+  "profileSaveAsProfile": {
+    "message": "Lưu hồ sơ"
+  },
+  "profileNamePlaceholder": {
+    "message": "Tên hồ sơ"
+  },
+  "profileSaved": {
+    "message": "Đã lưu hồ sơ."
+  },
+  "profileRestore": {
+    "message": "Khôi phục"
+  },
+  "profileRestored": {
+    "message": "Đã khôi phục hồ sơ. Tải lại trang nếu site chưa nhận thay đổi."
+  },
+  "profileRestorePartialFail": {
+    "message": "Một số mục không khôi phục được. Thử tải lại tab."
+  },
+  "profileDelete": {
+    "message": "Xóa"
+  },
+  "profileDeleted": {
+    "message": "Đã xóa hồ sơ."
+  },
+  "profileRename": {
+    "message": "Đổi tên"
+  },
+  "profileRenamed": {
+    "message": "Đã đổi tên hồ sơ."
+  },
+  "profileConfirmDeleteTitle": {
+    "message": "Xóa hồ sơ?"
+  },
+  "profileConfirmDeleteBody": {
+    "message": "Hành động này sẽ xóa vĩnh viễn hồ sơ \"$1\"."
+  },
+  "profileConfirmRestoreTitle": {
+    "message": "Khôi phục hồ sơ?"
+  },
+  "profileConfirmRestoreBody": {
+    "message": "Cookie, khóa storage và dữ liệu IndexedDB từ hồ sơ này sẽ được áp dụng vào tab hiện tại."
+  },
+  "profileItemCounts": {
+    "message": "$1 cookie · $2 local · $3 session · $4 IDB"
+  },
+  "profileSavedAt": {
+    "message": "Lưu $1"
+  },
+  "ctxMenuSaveProfile": {
+    "message": "Lưu thông tin đăng nhập (Identiti)"
+  },
+  "profileNameRequired": {
+    "message": "Nhập tên cho hồ sơ."
   }
 }
