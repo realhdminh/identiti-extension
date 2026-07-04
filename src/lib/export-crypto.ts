@@ -1,150 +1,118 @@
+import {
+  decryptExportEnvelopeCore,
+  encryptExportJsonCore,
+  type IdentitiEncryptedEnvelope,
+} from "@/lib/export-crypto-core"
 import { isRecord } from "@/lib/type-guards"
 
-const PBKDF2_ITERATIONS = 250_000
-const SALT_BYTES = 16
-const IV_BYTES = 12
+export type { IdentitiEncryptedEnvelope } from "@/lib/export-crypto-core"
 
-export type IdentitiEncryptedEnvelope = {
-  identitiEncrypted: true
-  cryptoVersion: 1
-  kdf: "PBKDF2"
-  prf: "SHA-256"
-  iterations: number
-  saltB64: string
-  ivB64: string
-  ciphertextB64: string
-}
+type WorkerRequest =
+  | { id: number; op: "encrypt"; plainUtf8: string; password: string }
+  | {
+      id: number
+      op: "decrypt"
+      env: IdentitiEncryptedEnvelope
+      password: string
+    }
 
-function bytesToB64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf)
-  let s = ""
-  for (let i = 0; i < bytes.length; i++) {
-    s += String.fromCharCode(bytes[i])
+type WorkerResponse =
+  | { id: number; ok: true; result: IdentitiEncryptedEnvelope | string }
+  | { id: number; ok: false; error: string }
+
+let worker: Worker | null | undefined
+let nextWorkerId = 0
+const pendingWorker = new Map<
+  number,
+  {
+    resolve: (value: IdentitiEncryptedEnvelope | string) => void
+    reject: (error: Error) => void
   }
-  return btoa(s)
+>()
+
+function getCryptoWorker(): Worker | null {
+  if (worker !== undefined) return worker
+  try {
+    worker = new Worker(new URL("./export-crypto.worker.ts", import.meta.url), {
+      type: "module",
+    })
+    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      const msg = event.data
+      const pending = pendingWorker.get(msg.id)
+      if (!pending) return
+      pendingWorker.delete(msg.id)
+      if (msg.ok) pending.resolve(msg.result)
+      else pending.reject(new Error(msg.error))
+    }
+    worker.onerror = () => {
+      worker?.terminate()
+      worker = null
+      for (const [, pending] of pendingWorker) {
+        pending.reject(new Error("CRYPTO_WORKER_FAILED"))
+      }
+      pendingWorker.clear()
+    }
+    return worker
+  } catch {
+    worker = null
+    return null
+  }
 }
 
-function b64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64)
-  const out = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-  return out
+function runEncryptInWorker(
+  plainUtf8: string,
+  password: string
+): Promise<IdentitiEncryptedEnvelope> {
+  const w = getCryptoWorker()
+  if (!w) return encryptExportJsonCore(plainUtf8, password)
+  const id = nextWorkerId++
+  return new Promise((resolve, reject) => {
+    pendingWorker.set(id, {
+      resolve: (value) => resolve(value as IdentitiEncryptedEnvelope),
+      reject,
+    })
+    w.postMessage({
+      id,
+      op: "encrypt",
+      plainUtf8,
+      password,
+    } satisfies WorkerRequest)
+  })
+}
+
+function runDecryptInWorker(
+  env: IdentitiEncryptedEnvelope,
+  password: string
+): Promise<string> {
+  const w = getCryptoWorker()
+  if (!w) return decryptExportEnvelopeCore(env, password)
+  const id = nextWorkerId++
+  return new Promise((resolve, reject) => {
+    pendingWorker.set(id, {
+      resolve: (value) => resolve(value as string),
+      reject,
+    })
+    w.postMessage({
+      id,
+      op: "decrypt",
+      env,
+      password,
+    } satisfies WorkerRequest)
+  })
 }
 
 export async function encryptExportJson(
   plainUtf8: string,
   password: string
 ): Promise<IdentitiEncryptedEnvelope> {
-  const enc = new TextEncoder()
-  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES))
-  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  )
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: salt.buffer.slice(
-        salt.byteOffset,
-        salt.byteOffset + salt.byteLength
-      ) as ArrayBuffer,
-      iterations: PBKDF2_ITERATIONS,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    256
-  )
-  const aesKey = await crypto.subtle.importKey(
-    "raw",
-    bits,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt"]
-  )
-  const ciphertext = await crypto.subtle.encrypt(
-    {
-      name: "AES-GCM",
-      iv: iv.buffer.slice(
-        iv.byteOffset,
-        iv.byteOffset + iv.byteLength
-      ) as ArrayBuffer,
-    },
-    aesKey,
-    enc.encode(plainUtf8)
-  )
-  return {
-    identitiEncrypted: true,
-    cryptoVersion: 1,
-    kdf: "PBKDF2",
-    prf: "SHA-256",
-    iterations: PBKDF2_ITERATIONS,
-    saltB64: bytesToB64(salt.buffer),
-    ivB64: bytesToB64(iv.buffer),
-    ciphertextB64: bytesToB64(ciphertext),
-  }
+  return runEncryptInWorker(plainUtf8, password)
 }
 
 export async function decryptExportEnvelope(
   env: IdentitiEncryptedEnvelope,
   password: string
 ): Promise<string> {
-  if (
-    env.cryptoVersion !== 1 ||
-    env.kdf !== "PBKDF2" ||
-    env.prf !== "SHA-256"
-  ) {
-    throw new Error("CRYPTO_UNSUPPORTED")
-  }
-  const enc = new TextEncoder()
-  const salt = b64ToBytes(env.saltB64)
-  const iv = b64ToBytes(env.ivB64)
-  const cipherRaw = b64ToBytes(env.ciphertextB64)
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  )
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: salt.buffer.slice(
-        salt.byteOffset,
-        salt.byteOffset + salt.byteLength
-      ) as ArrayBuffer,
-      iterations: env.iterations,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    256
-  )
-  const aesKey = await crypto.subtle.importKey(
-    "raw",
-    bits,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["decrypt"]
-  )
-  const plain = await crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv: iv.buffer.slice(
-        iv.byteOffset,
-        iv.byteOffset + iv.byteLength
-      ) as ArrayBuffer,
-    },
-    aesKey,
-    cipherRaw.buffer.slice(
-      cipherRaw.byteOffset,
-      cipherRaw.byteOffset + cipherRaw.byteLength
-    ) as ArrayBuffer
-  )
-  return new TextDecoder().decode(plain)
+  return runDecryptInWorker(env, password)
 }
 
 export function isEncryptedEnvelope(

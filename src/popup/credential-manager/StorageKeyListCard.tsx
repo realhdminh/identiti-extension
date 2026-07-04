@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { VirtualizedList } from "@/popup/components/VirtualizedList"
 import { truncate } from "@/popup/lib/format"
 
 export type StorageKeyListCardProps = {
@@ -110,44 +110,41 @@ export function StorageKeyListCard({
                     </Button>
                   </div>
                 )}
-                <ScrollArea className="h-[380px] pr-2">
-                  {count === 0 ? (
-                    <div className="px-1 py-2 text-muted-foreground text-xs">
-                      {emptyMessage}
-                    </div>
-                  ) : (
-                    <ul className="flex flex-col gap-1.5">
-                      {filteredKeys.map((k) => {
-                        const id = idFn(k)
-                        const v = entries[k] ?? ""
-                        return (
-                          <li key={id}>
-                            <label
-                              htmlFor={id}
-                              className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
-                            >
-                              <Checkbox
-                                id={id}
-                                checked={selected.has(id)}
-                                onCheckedChange={(vv) =>
-                                  onToggle(id, vv === true)
-                                }
-                              />
-                              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                <span className="block break-all font-medium text-[12px] leading-tight">
-                                  {k}
-                                </span>
-                                <span className="block break-all font-mono text-[10px] text-muted-foreground">
-                                  {truncate(v, 48)}
-                                </span>
-                              </span>
-                            </label>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-                </ScrollArea>
+                {count === 0 ? (
+                  <div className="px-1 py-2 text-muted-foreground text-xs">
+                    {emptyMessage}
+                  </div>
+                ) : (
+                  <VirtualizedList
+                    className="h-[380px] overflow-auto pr-2"
+                    items={filteredKeys}
+                    getKey={(k) => idFn(k)}
+                    renderItem={(k) => {
+                      const id = idFn(k)
+                      const v = entries[k] ?? ""
+                      return (
+                        <label
+                          htmlFor={id}
+                          className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
+                        >
+                          <Checkbox
+                            id={id}
+                            checked={selected.has(id)}
+                            onCheckedChange={(vv) => onToggle(id, vv === true)}
+                          />
+                          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="block break-all font-medium text-[12px] leading-tight">
+                              {k}
+                            </span>
+                            <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                              {truncate(v, 48)}
+                            </span>
+                          </span>
+                        </label>
+                      )
+                    }}
+                  />
+                )}
               </div>
             </DialogContent>
           </Dialog>

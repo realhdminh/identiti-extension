@@ -26,30 +26,44 @@ export type ProfilesTabProps = {
   tabUrl: string | undefined
   tabId: number | undefined
   profiles: ProfileIndexEntry[]
+  trashedProfiles: ProfileIndexEntry[]
   profileBusy: boolean
   onSave: (name: string) => void | Promise<void>
   onRestore: (id: string) => void | Promise<void>
-  onDelete: (id: string) => void | Promise<void>
+  onTrash: (id: string) => void | Promise<void>
+  onRestoreTrash: (id: string) => void | Promise<void>
+  onDeleteTrash: (id: string) => void | Promise<void>
   onRename: (id: string, name: string) => void | Promise<void>
+  onExportAll: () => void | Promise<void>
 }
 
 export function ProfilesTab({
   tabUrl,
   tabId,
   profiles,
+  trashedProfiles,
   profileBusy,
   onSave,
   onRestore,
-  onDelete,
+  onTrash,
+  onRestoreTrash,
+  onDeleteTrash,
   onRename,
+  onExportAll,
 }: ProfilesTabProps) {
   const [saveName, setSaveName] = useState("")
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmTrashId, setConfirmTrashId] = useState<string | null>(null)
   const [confirmRestoreId, setConfirmRestoreId] = useState<string | null>(null)
+  const [confirmDeleteTrashId, setConfirmDeleteTrashId] = useState<
+    string | null
+  >(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState("")
 
-  const confirmDeleteProfile = profiles.find((p) => p.id === confirmDeleteId)
+  const confirmTrashProfile = profiles.find((p) => p.id === confirmTrashId)
+  const confirmDeleteTrashProfile = trashedProfiles.find(
+    (p) => p.id === confirmDeleteTrashId
+  )
   const isWebUrl = isSupportedWebUrl(tabUrl)
 
   const handleSave = async () => {
@@ -98,18 +112,28 @@ export function ProfilesTab({
               <IconDeviceFloppy className="size-3.5" />
             </Button>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={profileBusy}
+            onClick={() => void onExportAll()}
+          >
+            {browser.i18n.getMessage("exportAllProfiles")}
+          </Button>
         </CardHeader>
       </Card>
 
       {profiles.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-1 py-6 text-center text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-1 py-4 text-center text-muted-foreground">
           <p className="text-xs">{browser.i18n.getMessage("profilesEmpty")}</p>
           <p className="text-[10px]">
             {browser.i18n.getMessage("profilesEmptyHint")}
           </p>
         </div>
       ) : (
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea className="max-h-[280px] min-h-0">
           <ul className="flex flex-col gap-1.5 pr-2">
             {profiles.map((p) => {
               const isRenaming = renamingId === p.id
@@ -196,7 +220,7 @@ export function ProfilesTab({
                             size="icon-xs"
                             title={browser.i18n.getMessage("profileDelete")}
                             disabled={profileBusy}
-                            onClick={() => setConfirmDeleteId(p.id)}
+                            onClick={() => setConfirmTrashId(p.id)}
                           >
                             <IconTrash className="size-3" />
                           </Button>
@@ -222,10 +246,52 @@ export function ProfilesTab({
         </ScrollArea>
       )}
 
+      {trashedProfiles.length > 0 && (
+        <div className="flex min-h-0 flex-col gap-1.5 border-border border-t pt-2">
+          <p className="font-medium text-[11px]">
+            {browser.i18n.getMessage("trashSectionTitle")}
+          </p>
+          <ScrollArea className="max-h-[140px]">
+            <ul className="flex flex-col gap-1 pr-2">
+              {trashedProfiles.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-1.5"
+                >
+                  <span className="min-w-0 flex-1 truncate text-[11px]">
+                    {p.name}
+                  </span>
+                  <div className="flex shrink-0 gap-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      disabled={profileBusy}
+                      onClick={() => void onRestoreTrash(p.id)}
+                    >
+                      {browser.i18n.getMessage("trashRestore")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      disabled={profileBusy}
+                      onClick={() => setConfirmDeleteTrashId(p.id)}
+                    >
+                      {browser.i18n.getMessage("trashDeleteForever")}
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+        </div>
+      )}
+
       <AlertDialog
-        open={confirmDeleteId != null}
+        open={confirmTrashId != null}
         onOpenChange={(open) => {
-          if (!open) setConfirmDeleteId(null)
+          if (!open) setConfirmTrashId(null)
         }}
       >
         <AlertDialogContent>
@@ -235,8 +301,8 @@ export function ProfilesTab({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {browser.i18n.getMessage(
-                "profileConfirmDeleteBody",
-                confirmDeleteProfile?.name ?? ""
+                "profileConfirmTrashBody",
+                confirmTrashProfile?.name ?? ""
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -247,11 +313,47 @@ export function ProfilesTab({
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
-                if (confirmDeleteId) void onDelete(confirmDeleteId)
-                setConfirmDeleteId(null)
+                if (confirmTrashId) void onTrash(confirmTrashId)
+                setConfirmTrashId(null)
               }}
             >
               {browser.i18n.getMessage("profileDelete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={confirmDeleteTrashId != null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteTrashId(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {browser.i18n.getMessage("trashDeleteForeverTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {browser.i18n.getMessage(
+                "trashDeleteForeverBody",
+                confirmDeleteTrashProfile?.name ?? ""
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {browser.i18n.getMessage("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteTrashId)
+                  void onDeleteTrash(confirmDeleteTrashId)
+                setConfirmDeleteTrashId(null)
+              }}
+            >
+              {browser.i18n.getMessage("trashDeleteForever")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -26,12 +26,13 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   cookieRowId,
   type ExportedCookie,
   isSupportedWebUrl,
 } from "@/lib/page-credentials"
+import { getPasswordStrength } from "@/lib/password-strength"
+import { VirtualizedList } from "@/popup/components/VirtualizedList"
 import { truncate } from "@/popup/lib/format"
 import { lsKeyId, ssKeyId } from "@/popup/lib/selection-ids"
 import { StorageKeyListCard } from "./StorageKeyListCard"
@@ -65,8 +66,10 @@ export type ExportTabProps = {
   exportPass2: string
   setExportPass2: (v: string) => void
   onExport: () => void | Promise<void>
+  onCopyJson: () => void | Promise<void>
   onSaveAsProfile: (name: string) => void | Promise<void>
   profileBusy: boolean
+  cryptoBusy: boolean
 }
 
 export function ExportTab({
@@ -92,8 +95,10 @@ export function ExportTab({
   exportPass2,
   setExportPass2,
   onExport,
+  onCopyJson,
   onSaveAsProfile,
   profileBusy,
+  cryptoBusy,
 }: ExportTabProps) {
   const exportPasswordSchema = z
     .object({
@@ -126,6 +131,17 @@ export function ExportTab({
   const [cookiesOpen, setCookiesOpen] = useState(false)
   const [idbOpen, setIdbOpen] = useState(false)
   const [quickProfileName, setQuickProfileName] = useState("")
+  const passwordStrength = encryptExport
+    ? getPasswordStrength(exportPass)
+    : null
+  const strengthMessage =
+    passwordStrength === "strong"
+      ? browser.i18n.getMessage("passwordStrengthStrong")
+      : passwordStrength === "fair"
+        ? browser.i18n.getMessage("passwordStrengthFair")
+        : passwordStrength === "weak"
+          ? browser.i18n.getMessage("passwordStrengthWeak")
+          : null
 
   if (!isSupportedWebUrl(tabUrl)) {
     return null
@@ -226,46 +242,45 @@ export function ExportTab({
                         </Button>
                       </div>
                     )}
-                    <ScrollArea className="h-[380px] pr-2">
-                      {filteredCookies.length === 0 ? (
-                        <div className="px-1 py-2 text-muted-foreground text-xs">
-                          {browser.i18n.getMessage("emptyCookies")}
-                        </div>
-                      ) : (
-                        <ul className="flex flex-col gap-1.5">
-                          {filteredCookies.map((c) => {
-                            const id = cookieRowId(c)
-                            return (
-                              <li key={id}>
-                                <label
-                                  htmlFor={id}
-                                  className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
-                                >
-                                  <Checkbox
-                                    id={id}
-                                    checked={selected.has(id)}
-                                    onCheckedChange={(v) =>
-                                      toggleId(id, v === true)
-                                    }
-                                  />
-                                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                    <span className="block break-all font-medium text-[12px] leading-tight">
-                                      {browser.i18n.getMessage("cookieLabel", [
-                                        c.name,
-                                        c.domain,
-                                      ])}
-                                    </span>
-                                    <span className="block break-all font-mono text-[10px] text-muted-foreground">
-                                      {truncate(c.value, 64)}
-                                    </span>
-                                  </span>
-                                </label>
-                              </li>
-                            )
-                          })}
-                        </ul>
-                      )}
-                    </ScrollArea>
+                    {filteredCookies.length === 0 ? (
+                      <div className="px-1 py-2 text-muted-foreground text-xs">
+                        {browser.i18n.getMessage("emptyCookies")}
+                      </div>
+                    ) : (
+                      <VirtualizedList
+                        className="h-[380px] overflow-auto pr-2"
+                        items={filteredCookies}
+                        getKey={(c) => cookieRowId(c)}
+                        renderItem={(c) => {
+                          const id = cookieRowId(c)
+                          return (
+                            <label
+                              htmlFor={id}
+                              className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
+                            >
+                              <Checkbox
+                                id={id}
+                                checked={selected.has(id)}
+                                onCheckedChange={(v) =>
+                                  toggleId(id, v === true)
+                                }
+                              />
+                              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                <span className="block break-all font-medium text-[12px] leading-tight">
+                                  {browser.i18n.getMessage("cookieLabel", [
+                                    c.name,
+                                    c.domain,
+                                  ])}
+                                </span>
+                                <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                  {truncate(c.value, 64)}
+                                </span>
+                              </span>
+                            </label>
+                          )
+                        }}
+                      />
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -379,41 +394,40 @@ export function ExportTab({
                         </Button>
                       </div>
                     )}
-                    <ScrollArea className="h-[380px] pr-2">
-                      {filteredIdbRows.length === 0 ? (
-                        <div className="px-1 py-2 text-muted-foreground text-xs">
-                          {browser.i18n.getMessage("emptyIndexedDB")}
-                        </div>
-                      ) : (
-                        <ul className="flex flex-col gap-1.5">
-                          {filteredIdbRows.map((r, idx) => (
-                            <li key={r.id}>
-                              <label
-                                htmlFor={`idb-row-${idx}`}
-                                className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
-                              >
-                                <Checkbox
-                                  id={`idb-row-${idx}`}
-                                  checked={selected.has(r.id)}
-                                  onCheckedChange={(v) =>
-                                    toggleId(r.id, v === true)
-                                  }
-                                />
-                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                  <span className="block font-medium text-[12px] leading-tight">
-                                    {r.database} / {r.store}
-                                  </span>
-                                  <span className="block break-all font-mono text-[10px] text-muted-foreground">
-                                    {truncate(JSON.stringify(r.key), 56)} ·{" "}
-                                    {truncate(r.preview, 40)}
-                                  </span>
-                                </span>
-                              </label>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </ScrollArea>
+                    {filteredIdbRows.length === 0 ? (
+                      <div className="px-1 py-2 text-muted-foreground text-xs">
+                        {browser.i18n.getMessage("emptyIndexedDB")}
+                      </div>
+                    ) : (
+                      <VirtualizedList
+                        className="h-[380px] overflow-auto pr-2"
+                        items={filteredIdbRows}
+                        getKey={(r) => r.id}
+                        renderItem={(r, idx) => (
+                          <label
+                            htmlFor={`idb-row-${idx}`}
+                            className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
+                          >
+                            <Checkbox
+                              id={`idb-row-${idx}`}
+                              checked={selected.has(r.id)}
+                              onCheckedChange={(v) =>
+                                toggleId(r.id, v === true)
+                              }
+                            />
+                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                              <span className="block font-medium text-[12px] leading-tight">
+                                {r.database} / {r.store}
+                              </span>
+                              <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                {truncate(JSON.stringify(r.key), 56)} ·{" "}
+                                {truncate(r.preview, 40)}
+                              </span>
+                            </span>
+                          </label>
+                        )}
+                      />
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -476,6 +490,11 @@ export function ExportTab({
                 )
               }}
             </passwordForm.Field>
+            {strengthMessage && (
+              <p className="text-[10px] text-muted-foreground">
+                {strengthMessage}
+              </p>
+            )}
             <passwordForm.Field name="exportPass2">
               {(field) => {
                 const inputId = field.name
@@ -512,18 +531,33 @@ export function ExportTab({
           selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
           {([canSubmit, isSubmitting]) => (
-            <Button
-              type="button"
-              className="w-full gap-1.5"
-              onClick={() => {
-                if (encryptExport) void passwordForm.handleSubmit()
-                else void onExport()
-              }}
-              disabled={isSubmitting || (encryptExport && !canSubmit)}
-            >
-              <IconDownload className="size-3.5" />
-              {browser.i18n.getMessage("exportButton")}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                className="flex-1 gap-1.5"
+                onClick={() => {
+                  if (encryptExport) void passwordForm.handleSubmit()
+                  else void onExport()
+                }}
+                disabled={
+                  isSubmitting || cryptoBusy || (encryptExport && !canSubmit)
+                }
+              >
+                <IconDownload className="size-3.5" />
+                {cryptoBusy
+                  ? browser.i18n.getMessage("encrypting")
+                  : browser.i18n.getMessage("exportButton")}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex-none"
+                onClick={() => void onCopyJson()}
+                disabled={encryptExport || cryptoBusy || isSubmitting}
+              >
+                {browser.i18n.getMessage("copyJson")}
+              </Button>
+            </div>
           )}
         </passwordForm.Subscribe>
         <div className="flex items-center gap-1.5">

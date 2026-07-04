@@ -18,5 +18,15 @@ export default defineConfig({
     permissions: ["storage", "tabs", "cookies", "scripting", "contextMenus"],
     host_permissions: ["<all_urls>"],
     incognito: "spanning",
+    action: {},
+    commands: {
+      "open-import": {
+        description: "__MSG_cmdOpenImport__",
+        suggested_key: {
+          default: "Ctrl+Shift+I",
+          mac: "Command+Shift+I",
+        },
+      },
+    },
   },
 })
