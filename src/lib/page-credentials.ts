@@ -283,6 +283,24 @@ export async function getCookiesForUrl(
   return Array.from(dedupe.values()).map((c) => serializeCookie(c))
 }
 
+export async function setCookiesOnTab(
+  tabUrl: string,
+  cookies: ExportedCookie[],
+  concurrency = 8
+): Promise<number> {
+  let fail = 0
+  for (let i = 0; i < cookies.length; i += concurrency) {
+    const chunk = cookies.slice(i, i + concurrency)
+    const results = await Promise.allSettled(
+      chunk.map((c) => setCookieOnTab(tabUrl, c))
+    )
+    for (const result of results) {
+      if (result.status === "rejected") fail++
+    }
+  }
+  return fail
+}
+
 export async function setCookieOnTab(
   tabUrl: string,
   c: ExportedCookie

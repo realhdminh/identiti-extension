@@ -62,6 +62,18 @@
   "exportButton": {
     "message": "Download JSON"
   },
+  "copyJson": {
+    "message": "Copy JSON"
+  },
+  "copySuccess": {
+    "message": "JSON copied to clipboard"
+  },
+  "encrypting": {
+    "message": "Encrypting…"
+  },
+  "decrypting": {
+    "message": "Decrypting…"
+  },
   "exportNothingSelected": {
     "message": "Select at least one item to export."
   },
@@ -226,5 +238,65 @@
   },
   "profileNameRequired": {
     "message": "Enter a name for this profile."
+  },
+  "cmdOpenImport": {
+    "message": "Open Identiti import tab"
+  },
+  "exportAllProfiles": {
+    "message": "Export all profiles"
+  },
+  "exportAllProfilesDone": {
+    "message": "All profiles exported."
+  },
+  "profileMovedToTrash": {
+    "message": "Profile moved to trash."
+  },
+  "profileRestoredFromTrash": {
+    "message": "Profile restored from trash."
+  },
+  "profilePermanentlyDeleted": {
+    "message": "Profile permanently deleted."
+  },
+  "profileConfirmTrashBody": {
+    "message": "Move \"$1\" to trash? You can restore it later."
+  },
+  "trashSectionTitle": {
+    "message": "Trash"
+  },
+  "trashRestore": {
+    "message": "Restore"
+  },
+  "trashDeleteForever": {
+    "message": "Delete forever"
+  },
+  "trashDeleteForeverTitle": {
+    "message": "Delete forever?"
+  },
+  "trashDeleteForeverBody": {
+    "message": "Permanently delete \"$1\"? This cannot be undone."
+  },
+  "passwordStrengthWeak": {
+    "message": "Weak password — use at least 8 characters."
+  },
+  "passwordStrengthFair": {
+    "message": "Fair password — add numbers or symbols for better security."
+  },
+  "passwordStrengthStrong": {
+    "message": "Strong password."
+  },
+  "importProgress": {
+    "message": "Applying step $1 of $2…"
+  },
+  "uiModeUseSidebar": {
+    "message": "Sidebar mode"
+  },
+  "uiModeUsePopup": {
+    "message": "Popup mode"
+  },
+  "uiModeSwitchedSidebar": {
+    "message": "Sidebar mode enabled. Click the toolbar icon to open the side panel."
+  },
+  "uiModeSwitchedPopup": {
+    "message": "Popup mode enabled. Click the toolbar icon to open the popup."
   }
 }

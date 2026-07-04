@@ -28,15 +28,14 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import type { IdentitiEncryptedEnvelope } from "@/lib/export-crypto"
-import { flattenIdbForUi } from "@/lib/indexeddb"
 import {
   type CredentialExportFile,
   cookieRowId,
   isSupportedWebUrl,
 } from "@/lib/page-credentials"
+import { VirtualizedList } from "@/popup/components/VirtualizedList"
 import { truncate } from "@/popup/lib/format"
 import { lsKeyId, ssKeyId } from "@/popup/lib/selection-ids"
 import { StorageKeyListCard } from "./StorageKeyListCard"
@@ -58,6 +57,20 @@ export type ImportTabProps = {
   importSelected: Set<string>
   setImportSelected: Dispatch<SetStateAction<Set<string>>>
   importBusy: boolean
+  cryptoBusy: boolean
+  importFilter: string
+  setImportFilter: (v: string) => void
+  filteredCookies: CredentialExportFile["cookies"]
+  filteredLsKeys: string[]
+  filteredSsKeys: string[]
+  filteredIdbRows: {
+    id: string
+    database: string
+    store: string
+    key: unknown
+    preview: string
+  }[]
+  idbRows: { id: string }[]
   originMismatch: boolean
   origin: string | null
   onPickFile: (f: File | null) => void | Promise<void>
@@ -76,6 +89,14 @@ export function ImportTab({
   importSelected,
   setImportSelected,
   importBusy,
+  cryptoBusy,
+  importFilter,
+  setImportFilter,
+  filteredCookies,
+  filteredLsKeys,
+  filteredSsKeys,
+  filteredIdbRows,
+  idbRows,
   originMismatch,
   origin,
   onPickFile,
@@ -104,7 +125,6 @@ export function ImportTab({
 
   const [cookiesDetailsOpen, setCookiesDetailsOpen] = useState(false)
   const [idbDetailsOpen, setIdbDetailsOpen] = useState(false)
-  const idbRows = importPayload ? flattenIdbForUi(importPayload.indexedDB) : []
 
   const decryptForm = useForm({
     defaultValues: { importDecryptPass },
@@ -189,9 +209,13 @@ export function ImportTab({
                 type="button"
                 className="w-full"
                 onClick={() => void decryptForm.handleSubmit()}
-                disabled={importBusy || isSubmitting || !canSubmit}
+                disabled={
+                  importBusy || cryptoBusy || isSubmitting || !canSubmit
+                }
               >
-                {browser.i18n.getMessage("decryptImport")}
+                {cryptoBusy
+                  ? browser.i18n.getMessage("decrypting")
+                  : browser.i18n.getMessage("decryptImport")}
               </Button>
             )}
           </decryptForm.Subscribe>
@@ -222,6 +246,13 @@ export function ImportTab({
           </div>
 
           <Separator />
+
+          <Input
+            className="h-8 text-xs"
+            placeholder={browser.i18n.getMessage("searchPlaceholder")}
+            value={importFilter}
+            onChange={(e) => setImportFilter(e.target.value)}
+          />
 
           <div className="flex flex-col gap-2 pr-1">
             <Card size="sm" className="flex flex-col py-2">
@@ -268,15 +299,15 @@ export function ImportTab({
                           {browser.i18n.getMessage("sectionCookies")}
                         </DialogTitle>
                         <DialogDescription>
-                          {importPayload.cookies.length === 0
+                          {filteredCookies.length === 0
                             ? browser.i18n.getMessage("emptyCookies")
                             : browser.i18n.getMessage("countItems", [
-                                String(importPayload.cookies.length),
+                                String(filteredCookies.length),
                               ])}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="px-4 pt-3 pb-4">
-                        {importPayload.cookies.length > 0 && (
+                        {filteredCookies.length > 0 && (
                           <div className="flex gap-1 pb-3">
                             <Button
                               type="button"
@@ -284,7 +315,7 @@ export function ImportTab({
                               size="xs"
                               onClick={() =>
                                 selectAllImportIn(
-                                  importPayload.cookies.map(cookieRowId),
+                                  filteredCookies.map(cookieRowId),
                                   true
                                 )
                               }
@@ -297,7 +328,7 @@ export function ImportTab({
                               size="xs"
                               onClick={() =>
                                 selectAllImportIn(
-                                  importPayload.cookies.map(cookieRowId),
+                                  filteredCookies.map(cookieRowId),
                                   false
                                 )
                               }
@@ -306,47 +337,46 @@ export function ImportTab({
                             </Button>
                           </div>
                         )}
-                        <ScrollArea className="h-[360px] pr-2">
-                          {importPayload.cookies.length === 0 ? (
-                            <div className="px-1 py-2 text-muted-foreground text-xs">
-                              {browser.i18n.getMessage("emptyCookies")}
-                            </div>
-                          ) : (
-                            <ul className="flex flex-col gap-1.5">
-                              {importPayload.cookies.map((c) => {
-                                const id = cookieRowId(c)
-                                const checkboxId = `im-${id}`
-                                return (
-                                  <li key={id}>
-                                    <label
-                                      htmlFor={checkboxId}
-                                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
-                                    >
-                                      <Checkbox
-                                        id={checkboxId}
-                                        checked={importSelected.has(id)}
-                                        onCheckedChange={(v) =>
-                                          toggleImport(id, v === true)
-                                        }
-                                      />
-                                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                        <span className="block break-all font-medium text-[12px] leading-tight">
-                                          {browser.i18n.getMessage(
-                                            "cookieLabel",
-                                            [c.name, c.domain]
-                                          )}
-                                        </span>
-                                        <span className="block break-all font-mono text-[10px] text-muted-foreground">
-                                          {truncate(c.value, 64)}
-                                        </span>
-                                      </span>
-                                    </label>
-                                  </li>
-                                )
-                              })}
-                            </ul>
-                          )}
-                        </ScrollArea>
+                        {filteredCookies.length === 0 ? (
+                          <div className="px-1 py-2 text-muted-foreground text-xs">
+                            {browser.i18n.getMessage("emptyCookies")}
+                          </div>
+                        ) : (
+                          <VirtualizedList
+                            className="h-[360px] overflow-auto pr-2"
+                            items={filteredCookies}
+                            getKey={(c) => cookieRowId(c)}
+                            renderItem={(c) => {
+                              const id = cookieRowId(c)
+                              const checkboxId = `im-${id}`
+                              return (
+                                <label
+                                  htmlFor={checkboxId}
+                                  className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
+                                >
+                                  <Checkbox
+                                    id={checkboxId}
+                                    checked={importSelected.has(id)}
+                                    onCheckedChange={(v) =>
+                                      toggleImport(id, v === true)
+                                    }
+                                  />
+                                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                    <span className="block break-all font-medium text-[12px] leading-tight">
+                                      {browser.i18n.getMessage("cookieLabel", [
+                                        c.name,
+                                        c.domain,
+                                      ])}
+                                    </span>
+                                    <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                      {truncate(c.value, 64)}
+                                    </span>
+                                  </span>
+                                </label>
+                              )
+                            }}
+                          />
+                        )}
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -365,9 +395,7 @@ export function ImportTab({
               heading={browser.i18n.getMessage("sectionLocalStorage")}
               icon={<IconDatabase className="size-3.5 opacity-50" />}
               emptyMessage={browser.i18n.getMessage("emptyLocalStorage")}
-              filteredKeys={Object.keys(importPayload.localStorage).sort(
-                (a, b) => a.localeCompare(b)
-              )}
+              filteredKeys={filteredLsKeys}
               allKeys={Object.keys(importPayload.localStorage).sort((a, b) =>
                 a.localeCompare(b)
               )}
@@ -382,9 +410,7 @@ export function ImportTab({
               heading={browser.i18n.getMessage("sectionSessionStorage")}
               icon={<IconLayersSubtract className="size-3.5 opacity-50" />}
               emptyMessage={browser.i18n.getMessage("emptySessionStorage")}
-              filteredKeys={Object.keys(importPayload.sessionStorage).sort(
-                (a, b) => a.localeCompare(b)
-              )}
+              filteredKeys={filteredSsKeys}
               allKeys={Object.keys(importPayload.sessionStorage).sort((a, b) =>
                 a.localeCompare(b)
               )}
@@ -437,15 +463,15 @@ export function ImportTab({
                           {browser.i18n.getMessage("sectionIndexedDB")}
                         </DialogTitle>
                         <DialogDescription>
-                          {idbRows.length === 0
+                          {filteredIdbRows.length === 0
                             ? browser.i18n.getMessage("emptyIndexedDB")
                             : browser.i18n.getMessage("countItems", [
-                                String(idbRows.length),
+                                String(filteredIdbRows.length),
                               ])}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="px-4 pt-3 pb-4">
-                        {idbRows.length > 0 && (
+                        {filteredIdbRows.length > 0 && (
                           <div className="flex gap-1 pb-3">
                             <Button
                               type="button"
@@ -453,7 +479,7 @@ export function ImportTab({
                               size="xs"
                               onClick={() =>
                                 selectAllImportIn(
-                                  idbRows.map((r) => r.id),
+                                  filteredIdbRows.map((r) => r.id),
                                   true
                                 )
                               }
@@ -466,7 +492,7 @@ export function ImportTab({
                               size="xs"
                               onClick={() =>
                                 selectAllImportIn(
-                                  idbRows.map((r) => r.id),
+                                  filteredIdbRows.map((r) => r.id),
                                   false
                                 )
                               }
@@ -475,41 +501,40 @@ export function ImportTab({
                             </Button>
                           </div>
                         )}
-                        <ScrollArea className="h-[360px] pr-2">
-                          {idbRows.length === 0 ? (
-                            <div className="px-1 py-2 text-muted-foreground text-xs">
-                              {browser.i18n.getMessage("emptyIndexedDB")}
-                            </div>
-                          ) : (
-                            <ul className="flex flex-col gap-1.5">
-                              {idbRows.map((r, idx) => (
-                                <li key={r.id}>
-                                  <label
-                                    htmlFor={`im-idb-${idx}`}
-                                    className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
-                                  >
-                                    <Checkbox
-                                      id={`im-idb-${idx}`}
-                                      checked={importSelected.has(r.id)}
-                                      onCheckedChange={(v) =>
-                                        toggleImport(r.id, v === true)
-                                      }
-                                    />
-                                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                      <span className="block font-medium text-[12px] leading-tight">
-                                        {r.database} / {r.store}
-                                      </span>
-                                      <span className="block break-all font-mono text-[10px] text-muted-foreground">
-                                        {truncate(JSON.stringify(r.key), 40)} ·{" "}
-                                        {truncate(r.preview, 40)}
-                                      </span>
-                                    </span>
-                                  </label>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </ScrollArea>
+                        {filteredIdbRows.length === 0 ? (
+                          <div className="px-1 py-2 text-muted-foreground text-xs">
+                            {browser.i18n.getMessage("emptyIndexedDB")}
+                          </div>
+                        ) : (
+                          <VirtualizedList
+                            className="h-[360px] overflow-auto pr-2"
+                            items={filteredIdbRows}
+                            getKey={(r) => r.id}
+                            renderItem={(r, idx) => (
+                              <label
+                                htmlFor={`im-idb-${idx}`}
+                                className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-card/50 px-2 py-1 hover:bg-muted/60"
+                              >
+                                <Checkbox
+                                  id={`im-idb-${idx}`}
+                                  checked={importSelected.has(r.id)}
+                                  onCheckedChange={(v) =>
+                                    toggleImport(r.id, v === true)
+                                  }
+                                />
+                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                  <span className="block font-medium text-[12px] leading-tight">
+                                    {r.database} / {r.store}
+                                  </span>
+                                  <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                    {truncate(JSON.stringify(r.key), 40)} ·{" "}
+                                    {truncate(r.preview, 40)}
+                                  </span>
+                                </span>
+                              </label>
+                            )}
+                          />
+                        )}
                       </div>
                     </DialogContent>
                   </Dialog>

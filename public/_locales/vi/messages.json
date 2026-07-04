@@ -62,6 +62,12 @@
   "exportButton": {
     "message": "Tải JSON"
   },
+  "encrypting": {
+    "message": "Đang mã hóa…"
+  },
+  "decrypting": {
+    "message": "Đang giải mã…"
+  },
   "exportNothingSelected": {
     "message": "Chọn ít nhất một mục để xuất."
   },
@@ -226,5 +232,71 @@
   },
   "profileNameRequired": {
     "message": "Nhập tên cho hồ sơ."
+  },
+  "copyJson": {
+    "message": "Sao chép JSON"
+  },
+  "copySuccess": {
+    "message": "Đã sao chép JSON"
+  },
+  "cmdOpenImport": {
+    "message": "Mở tab nhập Identiti"
+  },
+  "exportAllProfiles": {
+    "message": "Xuất tất cả hồ sơ"
+  },
+  "exportAllProfilesDone": {
+    "message": "Đã xuất tất cả hồ sơ."
+  },
+  "profileMovedToTrash": {
+    "message": "Đã chuyển hồ sơ vào thùng rác."
+  },
+  "profileRestoredFromTrash": {
+    "message": "Đã khôi phục hồ sơ từ thùng rác."
+  },
+  "profilePermanentlyDeleted": {
+    "message": "Đã xóa hồ sơ vĩnh viễn."
+  },
+  "profileConfirmTrashBody": {
+    "message": "Chuyển \"$1\" vào thùng rác? Bạn có thể khôi phục sau."
+  },
+  "trashSectionTitle": {
+    "message": "Thùng rác"
+  },
+  "trashRestore": {
+    "message": "Khôi phục"
+  },
+  "trashDeleteForever": {
+    "message": "Xóa vĩnh viễn"
+  },
+  "trashDeleteForeverTitle": {
+    "message": "Xóa vĩnh viễn?"
+  },
+  "trashDeleteForeverBody": {
+    "message": "Xóa vĩnh viễn \"$1\"? Không thể hoàn tác."
+  },
+  "passwordStrengthWeak": {
+    "message": "Mật khẩu yếu — dùng ít nhất 8 ký tự."
+  },
+  "passwordStrengthFair": {
+    "message": "Mật khẩu khá — thêm số hoặc ký tự đặc biệt để an toàn hơn."
+  },
+  "passwordStrengthStrong": {
+    "message": "Mật khẩu mạnh."
+  },
+  "importProgress": {
+    "message": "Đang áp dụng bước $1 / $2…"
+  },
+  "uiModeUseSidebar": {
+    "message": "Chế độ sidebar"
+  },
+  "uiModeUsePopup": {
+    "message": "Chế độ popup"
+  },
+  "uiModeSwitchedSidebar": {
+    "message": "Đã bật sidebar. Bấm icon trên thanh công cụ để mở side panel."
+  },
+  "uiModeSwitchedPopup": {
+    "message": "Đã bật popup. Bấm icon trên thanh công cụ để mở popup."
   }
 }

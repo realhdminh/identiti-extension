@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
+import { storage } from "wxt/utils/storage"
 import {
   decryptExportEnvelope,
   encryptExportJson,
   type IdentitiEncryptedEnvelope,
   isEncryptedEnvelope,
 } from "@/lib/export-crypto"
-import {
-  filterIndexedDBExport,
-  flattenIdbForUi,
-  type IndexedDBExport,
-} from "@/lib/indexeddb"
+import { flattenIdbForUi, type IndexedDBExport } from "@/lib/indexeddb"
 import {
   applyPageIndexedDBOnTab,
   type CredentialExportFile,
   cookieRowId,
-  EXPORT_SCHEMA_VERSION,
   type ExportedCookie,
   getCookiesForUrl,
   isSupportedWebUrl,
@@ -26,19 +22,26 @@ import {
   readPageIndexedDB,
   readPageLocalStorage,
   readPageSessionStorage,
-  setCookieOnTab,
+  setCookiesOnTab,
   writePageLocalStorage,
   writePageSessionStorage,
 } from "@/lib/page-credentials"
 import {
   type CredentialProfile,
-  deleteProfile,
+  exportAllProfilesBundle,
   listProfilesForOrigin,
+  listTrashedProfiles,
   loadProfile,
   type ProfileIndexEntry,
+  permanentlyDeleteTrashedProfile,
   renameProfile,
+  restoreProfileFromTrash,
   saveProfile,
+  trashProfile,
+  watchProfileIndex,
+  watchProfileTrash,
 } from "@/lib/profiles"
+import { buildSelectedExportPayload } from "@/popup/lib/build-export-payload"
 import { slugForFilename } from "@/popup/lib/format"
 import { lsKeyId, ssKeyId } from "@/popup/lib/selection-ids"
 
@@ -66,7 +69,13 @@ export function useCredentialManagerState() {
     useState<IdentitiEncryptedEnvelope | null>(null)
   const [importDecryptPass, setImportDecryptPass] = useState("")
   const [profiles, setProfiles] = useState<ProfileIndexEntry[]>([])
+  const [trashedProfiles, setTrashedProfiles] = useState<ProfileIndexEntry[]>(
+    []
+  )
   const [profileBusy, setProfileBusy] = useState(false)
+  const [cryptoBusy, setCryptoBusy] = useState(false)
+  const [importFilter, setImportFilter] = useState("")
+  const [initialTab, setInitialTab] = useState<string | undefined>()
 
   const origin =
     tabUrl && isSupportedWebUrl(tabUrl) ? originFromUrl(tabUrl) : null
@@ -164,7 +173,42 @@ export function useCredentialManagerState() {
 
   useEffect(() => {
     void refreshProfiles()
-  }, [refreshProfiles])
+    if (!origin) return
+    const unwatch = watchProfileIndex((entries) => {
+      setProfiles(entries.filter((p) => p.origin === origin))
+    })
+    return unwatch
+  }, [origin, refreshProfiles])
+
+  const refreshTrashedProfiles = useCallback(async () => {
+    if (!origin) {
+      setTrashedProfiles([])
+      return
+    }
+    try {
+      const list = await listTrashedProfiles(origin)
+      setTrashedProfiles(list)
+    } catch {
+      setTrashedProfiles([])
+    }
+  }, [origin])
+
+  useEffect(() => {
+    void refreshTrashedProfiles()
+    if (!origin) return
+    return watchProfileTrash((entries) => {
+      setTrashedProfiles(entries.filter((p) => p.origin === origin))
+    })
+  }, [origin, refreshTrashedProfiles])
+
+  useEffect(() => {
+    void storage.getItem<string>("session:openTab").then((tab) => {
+      if (tab) {
+        setInitialTab(tab)
+        void storage.removeItem("session:openTab")
+      }
+    })
+  }, [])
 
   const filterLower = filter.trim().toLowerCase()
 
@@ -209,6 +253,63 @@ export function useCredentialManagerState() {
     )
   }, [idbRows, filterLower])
 
+  const importFilterLower = importFilter.trim().toLowerCase()
+
+  const importFilteredCookies = useMemo(() => {
+    if (!importPayload) return []
+    if (!importFilterLower) return importPayload.cookies
+    return importPayload.cookies.filter(
+      (c) =>
+        c.name.toLowerCase().includes(importFilterLower) ||
+        c.domain.toLowerCase().includes(importFilterLower) ||
+        c.value.toLowerCase().includes(importFilterLower)
+    )
+  }, [importPayload, importFilterLower])
+
+  const importFilteredLsKeys = useMemo(() => {
+    if (!importPayload) return []
+    const keys = Object.keys(importPayload.localStorage).sort((a, b) =>
+      a.localeCompare(b)
+    )
+    if (!importFilterLower) return keys
+    return keys.filter(
+      (k) =>
+        k.toLowerCase().includes(importFilterLower) ||
+        importPayload.localStorage[k].toLowerCase().includes(importFilterLower)
+    )
+  }, [importPayload, importFilterLower])
+
+  const importFilteredSsKeys = useMemo(() => {
+    if (!importPayload) return []
+    const keys = Object.keys(importPayload.sessionStorage).sort((a, b) =>
+      a.localeCompare(b)
+    )
+    if (!importFilterLower) return keys
+    return keys.filter(
+      (k) =>
+        k.toLowerCase().includes(importFilterLower) ||
+        importPayload.sessionStorage[k]
+          .toLowerCase()
+          .includes(importFilterLower)
+    )
+  }, [importPayload, importFilterLower])
+
+  const importIdbRows = useMemo(
+    () => (importPayload ? flattenIdbForUi(importPayload.indexedDB) : []),
+    [importPayload]
+  )
+
+  const importFilteredIdbRows = useMemo(() => {
+    if (!importFilterLower) return importIdbRows
+    return importIdbRows.filter(
+      (r) =>
+        r.database.toLowerCase().includes(importFilterLower) ||
+        r.store.toLowerCase().includes(importFilterLower) ||
+        r.preview.toLowerCase().includes(importFilterLower) ||
+        JSON.stringify(r.key).toLowerCase().includes(importFilterLower)
+    )
+  }, [importIdbRows, importFilterLower])
+
   const toggleId = useCallback((id: string, on: boolean) => {
     setSelected((prev) => {
       const n = new Set(prev)
@@ -237,43 +338,31 @@ export function useCredentialManagerState() {
         return
       }
     }
-    const pickCookies = cookies.filter((c) => selected.has(cookieRowId(c)))
-    const pickLs: Record<string, string> = {}
-    for (const k of Object.keys(lsEntries)) {
-      if (selected.has(lsKeyId(k))) pickLs[k] = lsEntries[k]
-    }
-    const pickSs: Record<string, string> = {}
-    for (const k of Object.keys(ssEntries)) {
-      if (selected.has(ssKeyId(k))) pickSs[k] = ssEntries[k]
-    }
-    const pickIdb = filterIndexedDBExport(idbData, selected)
-    const anyIdb = Object.keys(pickIdb).length > 0
-    if (
-      pickCookies.length === 0 &&
-      Object.keys(pickLs).length === 0 &&
-      Object.keys(pickSs).length === 0 &&
-      !anyIdb
-    ) {
+    const payload = buildSelectedExportPayload({
+      origin,
+      tabUrl,
+      cookies,
+      lsEntries,
+      ssEntries,
+      idbData,
+      selected,
+    })
+    if (!payload) {
       toast.error(browser.i18n.getMessage("exportNothingSelected"))
       return
-    }
-    const payload: CredentialExportFile = {
-      identitiVersion: EXPORT_SCHEMA_VERSION,
-      exportedAt: new Date().toISOString(),
-      origin,
-      pageUrl: tabUrl,
-      cookies: pickCookies,
-      localStorage: pickLs,
-      sessionStorage: pickSs,
-      indexedDB: pickIdb,
     }
     const json = JSON.stringify(payload, null, 2)
     let outText: string
     let filename: string
     if (encryptExport) {
-      const enc = await encryptExportJson(json, exportPass)
-      outText = JSON.stringify(enc, null, 2)
-      filename = `identiti-${slugForFilename(origin)}-${Date.now()}.encrypted.json`
+      setCryptoBusy(true)
+      try {
+        const enc = await encryptExportJson(json, exportPass)
+        outText = JSON.stringify(enc, null, 2)
+        filename = `identiti-${slugForFilename(origin)}-${Date.now()}.encrypted.json`
+      } finally {
+        setCryptoBusy(false)
+      }
     } else {
       outText = json
       filename = `identiti-${slugForFilename(origin)}-${Date.now()}.json`
@@ -298,6 +387,67 @@ export function useCredentialManagerState() {
     ssEntries,
     idbData,
   ])
+
+  const copyExportJson = useCallback(async () => {
+    if (!origin || !tabUrl || encryptExport) return
+    const payload = buildSelectedExportPayload({
+      origin,
+      tabUrl,
+      cookies,
+      lsEntries,
+      ssEntries,
+      idbData,
+      selected,
+    })
+    if (!payload) {
+      toast.error(browser.i18n.getMessage("exportNothingSelected"))
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
+      toast.success(browser.i18n.getMessage("copySuccess"))
+    } catch {
+      toast.error(browser.i18n.getMessage("loadError", "clipboard"))
+    }
+  }, [
+    origin,
+    tabUrl,
+    encryptExport,
+    cookies,
+    selected,
+    lsEntries,
+    ssEntries,
+    idbData,
+  ])
+
+  const exportAllProfiles = useCallback(async () => {
+    setProfileBusy(true)
+    try {
+      const bundle = await exportAllProfilesBundle()
+      if (bundle.profiles.length === 0) {
+        toast.error(browser.i18n.getMessage("profilesEmpty"))
+        return
+      }
+      const outText = JSON.stringify(bundle, null, 2)
+      const blob = new Blob([outText], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `identiti-profiles-${Date.now()}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(browser.i18n.getMessage("exportAllProfilesDone"))
+    } catch (e) {
+      toast.error(
+        browser.i18n.getMessage(
+          "loadError",
+          e instanceof Error ? e.message : String(e)
+        )
+      )
+    } finally {
+      setProfileBusy(false)
+    }
+  }, [])
 
   const applyParsedImport = useCallback((data: CredentialExportFile) => {
     setImportPayload(data)
@@ -340,6 +490,7 @@ export function useCredentialManagerState() {
   const decryptAndLoadImport = useCallback(async () => {
     if (!importEnvelope) return
     toast.dismiss()
+    setCryptoBusy(true)
     try {
       const plain = await decryptExportEnvelope(
         importEnvelope,
@@ -350,6 +501,8 @@ export function useCredentialManagerState() {
       toast.dismiss()
     } catch {
       toast.error(browser.i18n.getMessage("decryptFailed"))
+    } finally {
+      setCryptoBusy(false)
     }
   }, [importEnvelope, importDecryptPass, applyParsedImport])
 
@@ -397,24 +550,62 @@ export function useCredentialManagerState() {
     setImportBusy(true)
     setConfirmOpen(false)
     let cookieFail = 0
+    const totalSteps =
+      (cookiesToApply.length > 0 ? 1 : 0) +
+      (Object.keys(lsToApply).length > 0 ? 1 : 0) +
+      (Object.keys(ssToApply).length > 0 ? 1 : 0) +
+      (idbReplaceKeys > 0 ? 1 : 0) +
+      (idbMergeKeys > 0 ? 1 : 0)
+    let step = 0
     try {
-      for (const c of cookiesToApply) {
-        try {
-          await setCookieOnTab(tabUrl, c)
-        } catch {
-          cookieFail++
-        }
+      if (cookiesToApply.length > 0) {
+        step++
+        toast.message(
+          browser.i18n.getMessage("importProgress", [
+            String(step),
+            String(totalSteps),
+          ])
+        )
+        cookieFail = await setCookiesOnTab(tabUrl, cookiesToApply)
       }
       if (Object.keys(lsToApply).length > 0) {
+        step++
+        toast.message(
+          browser.i18n.getMessage("importProgress", [
+            String(step),
+            String(totalSteps),
+          ])
+        )
         await writePageLocalStorage(tabId, lsToApply)
       }
       if (Object.keys(ssToApply).length > 0) {
+        step++
+        toast.message(
+          browser.i18n.getMessage("importProgress", [
+            String(step),
+            String(totalSteps),
+          ])
+        )
         await writePageSessionStorage(tabId, ssToApply)
       }
       if (idbReplaceKeys > 0) {
+        step++
+        toast.message(
+          browser.i18n.getMessage("importProgress", [
+            String(step),
+            String(totalSteps),
+          ])
+        )
         await applyPageIndexedDBOnTab(tabId, replace)
       }
       if (idbMergeKeys > 0) {
+        step++
+        toast.message(
+          browser.i18n.getMessage("importProgress", [
+            String(step),
+            String(totalSteps),
+          ])
+        )
         await mergePageIndexedDBOnTab(tabId, merge)
       }
       if (cookieFail > 0) {
@@ -475,14 +666,7 @@ export function useCredentialManagerState() {
       try {
         const profile = await loadProfile(profileId)
         if (!profile) return
-        let cookieFail = 0
-        for (const c of profile.cookies) {
-          try {
-            await setCookieOnTab(tabUrl, c)
-          } catch {
-            cookieFail++
-          }
-        }
+        const cookieFail = await setCookiesOnTab(tabUrl, profile.cookies)
         if (Object.keys(profile.localStorage).length > 0) {
           await writePageLocalStorage(tabId, profile.localStorage)
         }
@@ -513,13 +697,14 @@ export function useCredentialManagerState() {
     [tabId, tabUrl, refresh]
   )
 
-  const deleteProfileById = useCallback(
+  const trashProfileById = useCallback(
     async (profileId: string) => {
       setProfileBusy(true)
       try {
-        await deleteProfile(profileId)
+        await trashProfile(profileId)
         await refreshProfiles()
-        toast.success(browser.i18n.getMessage("profileDeleted"))
+        await refreshTrashedProfiles()
+        toast.success(browser.i18n.getMessage("profileMovedToTrash"))
       } catch (e) {
         toast.error(
           browser.i18n.getMessage(
@@ -531,7 +716,50 @@ export function useCredentialManagerState() {
         setProfileBusy(false)
       }
     },
-    [refreshProfiles]
+    [refreshProfiles, refreshTrashedProfiles]
+  )
+
+  const restoreTrashedProfileById = useCallback(
+    async (profileId: string) => {
+      setProfileBusy(true)
+      try {
+        await restoreProfileFromTrash(profileId)
+        await refreshProfiles()
+        await refreshTrashedProfiles()
+        toast.success(browser.i18n.getMessage("profileRestoredFromTrash"))
+      } catch (e) {
+        toast.error(
+          browser.i18n.getMessage(
+            "loadError",
+            e instanceof Error ? e.message : String(e)
+          )
+        )
+      } finally {
+        setProfileBusy(false)
+      }
+    },
+    [refreshProfiles, refreshTrashedProfiles]
+  )
+
+  const permanentlyDeleteTrashedProfileById = useCallback(
+    async (profileId: string) => {
+      setProfileBusy(true)
+      try {
+        await permanentlyDeleteTrashedProfile(profileId)
+        await refreshTrashedProfiles()
+        toast.success(browser.i18n.getMessage("profilePermanentlyDeleted"))
+      } catch (e) {
+        toast.error(
+          browser.i18n.getMessage(
+            "loadError",
+            e instanceof Error ? e.message : String(e)
+          )
+        )
+      } finally {
+        setProfileBusy(false)
+      }
+    },
+    [refreshTrashedProfiles]
   )
 
   const renameProfileById = useCallback(
@@ -571,11 +799,15 @@ export function useCredentialManagerState() {
     idbData,
     filter,
     setFilter,
+    importFilter,
+    setImportFilter,
     selected,
     toggleId,
     selectAllIn,
     refresh,
     exportJson,
+    copyExportJson,
+    exportAllProfiles,
     encryptExport,
     setEncryptExport,
     exportPass,
@@ -588,6 +820,7 @@ export function useCredentialManagerState() {
     confirmOpen,
     setConfirmOpen,
     importBusy,
+    cryptoBusy,
     importEnvelope,
     importDecryptPass,
     setImportDecryptPass,
@@ -600,12 +833,21 @@ export function useCredentialManagerState() {
     filteredLsKeys,
     filteredSsKeys,
     filteredIdbRows,
+    importFilteredCookies,
+    importFilteredLsKeys,
+    importFilteredSsKeys,
+    importFilteredIdbRows,
+    importIdbRows,
     idbRows,
     profiles,
+    trashedProfiles,
     profileBusy,
+    initialTab,
     saveCurrentAsProfile,
     restoreProfile,
-    deleteProfileById,
+    trashProfileById,
+    restoreTrashedProfileById,
+    permanentlyDeleteTrashedProfileById,
     renameProfileById,
   }
 }
