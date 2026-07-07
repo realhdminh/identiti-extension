@@ -1,5 +1,6 @@
-import { IconDeviceFloppy, IconDownload, IconUpload } from "@tabler/icons-react"
-import { lazy, Suspense, useEffect, useState } from "react"
+import { IconSettings } from "@tabler/icons-react"
+import { useEffect, useState } from "react"
+import { storage } from "wxt/utils/storage"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -12,35 +13,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import { isSupportedWebUrl } from "@/lib/page-credentials"
 import type { AppLayout } from "@/popup/AppShell"
-import { PopupLoadingSkeleton } from "@/popup/components/PopupLoadingSkeleton"
+import { FirstRun } from "@/popup/components/FirstRun"
+import { LoginDashboard } from "@/popup/components/LoginDashboard"
+import { SettingsDialog } from "@/popup/components/SettingsDialog"
+import { TransferDialog } from "@/popup/components/TransferDialog"
 import { UiModeToggle } from "@/popup/components/UiModeToggle"
 import { useCredentialManagerState } from "@/popup/credential-manager/useCredentialManagerState"
 
-const ExportTab = lazy(() =>
-  import("@/popup/credential-manager/ExportTab").then((m) => ({
-    default: m.ExportTab,
-  }))
-)
-const ImportTab = lazy(() =>
-  import("@/popup/credential-manager/ImportTab").then((m) => ({
-    default: m.ImportTab,
-  }))
-)
-const ProfilesTab = lazy(() =>
-  import("@/popup/credential-manager/ProfilesTab").then((m) => ({
-    default: m.ProfilesTab,
-  }))
-)
-
-function TabFallback() {
-  return (
-    <div className="flex min-h-[120px] items-center justify-center text-muted-foreground text-xs">
-      {browser.i18n.getMessage("loading")}
-    </div>
-  )
+function defaultNameForOrigin(origin: string | null): string {
+  if (!origin) return browser.i18n.getMessage("saveCurrentLabel")
+  try {
+    return new URL(origin).hostname
+  } catch {
+    return origin
+  }
 }
 
 export type CredentialManagerProps = {
@@ -51,41 +40,71 @@ export function CredentialManager({
   layout = "popup",
 }: CredentialManagerProps) {
   const s = useCredentialManagerState()
-  const [activeTab, setActiveTab] = useState(
-    s.initialTab ?? (s.profiles.length > 0 ? "profiles" : "export")
-  )
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [seenWelcome, setSeenWelcome] = useState<boolean | null>(null)
 
   useEffect(() => {
-    if (s.initialTab) setActiveTab(s.initialTab)
-  }, [s.initialTab])
+    void storage.getItem<boolean>("local:seenWelcome").then((v) => {
+      setSeenWelcome(v === true)
+    })
+  }, [])
 
-  if (s.loading) {
-    return <PopupLoadingSkeleton layout={layout} />
+  const finishWelcome = () => {
+    setSeenWelcome(true)
+    void storage.setItem("local:seenWelcome", true)
+  }
+
+  if (s.loading || seenWelcome === null) {
+    return null
   }
 
   const isSidepanel = layout === "sidepanel"
+  const showFirstRun = !seenWelcome
+
+  const saveCurrentNamed = (name?: string) => {
+    finishWelcome()
+    const finalName = name?.trim() || defaultNameForOrigin(s.origin)
+    void s.saveCurrentAsProfile(finalName)
+  }
 
   return (
     <div
       className={
         isSidepanel
-          ? "flex min-h-screen w-full flex-col gap-2 overflow-hidden p-3"
-          : "flex max-h-[900px] w-[460px] flex-col gap-2 overflow-hidden p-3"
+          ? "flex min-h-screen w-full flex-col gap-3 overflow-hidden p-4"
+          : "flex max-h-[680px] w-[480px] flex-col gap-3 overflow-hidden p-4"
       }
     >
-      <header className="shrink-0 space-y-1">
+      <header className="shrink-0 space-y-1.5">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-0.5">
+          <div className="min-w-0 space-y-1">
             <h1 className="font-heading font-semibold text-base tracking-tight">
               {browser.i18n.getMessage("heading")}
             </h1>
             {s.tabUrl && isSupportedWebUrl(s.tabUrl) && (
-              <p className="break-all text-[11px] text-muted-foreground leading-snug">
+              <p className="break-all text-muted-foreground text-xs leading-snug">
                 {browser.i18n.getMessage("currentSite", s.tabUrl)}
               </p>
             )}
           </div>
-          <UiModeToggle />
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              title={browser.i18n.getMessage("advancedOpen")}
+              onClick={() => setSettingsOpen(true)}
+            >
+              <IconSettings className="size-3.5" />
+            </Button>
+            <UiModeToggle />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="secondary" className="text-[10px]">
+            {browser.i18n.getMessage("localFirstBadge")}
+          </Badge>
         </div>
       </header>
 
@@ -98,128 +117,61 @@ export function CredentialManager({
         </Alert>
       )}
 
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden"
-      >
-        <TabsList
-          variant="line"
-          className="w-full shrink-0 justify-stretch gap-0"
-        >
-          <TabsTrigger value="profiles" className="flex-1 gap-1">
-            <IconDeviceFloppy className="size-3.5 opacity-70" />
-            {browser.i18n.getMessage("tabProfiles")}
-            {s.profiles.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="ml-0.5 h-4 min-w-4 px-1 text-[9px]"
-              >
-                {s.profiles.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="export" className="flex-1 gap-1">
-            <IconDownload className="size-3.5 opacity-70" />
-            {browser.i18n.getMessage("tabExport")}
-          </TabsTrigger>
-          <TabsTrigger value="import" className="flex-1 gap-1">
-            <IconUpload className="size-3.5 opacity-70" />
-            {browser.i18n.getMessage("tabImport")}
-          </TabsTrigger>
-        </TabsList>
+      {showFirstRun ? (
+        <FirstRun
+          className="min-h-0 flex-1"
+          onSave={saveCurrentNamed}
+          onTransfer={() => {
+            finishWelcome()
+            setTransferOpen(true)
+          }}
+        />
+      ) : (
+        <LoginDashboard
+          tabUrl={s.tabUrl}
+          tabId={s.tabId}
+          profiles={s.profiles}
+          profileBusy={s.profileBusy}
+          onSaveCurrent={saveCurrentNamed}
+          onRestore={(id) => void s.restoreProfile(id)}
+          onTrash={(id) => void s.trashProfileById(id)}
+          onOpenTransfer={() => setTransferOpen(true)}
+        />
+      )}
 
-        <TabsContent
-          value="profiles"
-          className="mt-0 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden data-[state=inactive]:hidden"
-        >
-          <Suspense fallback={<TabFallback />}>
-            <ProfilesTab
-              tabUrl={s.tabUrl}
-              tabId={s.tabId}
-              profiles={s.profiles}
-              trashedProfiles={s.trashedProfiles}
-              profileBusy={s.profileBusy}
-              onSave={s.saveCurrentAsProfile}
-              onRestore={s.restoreProfile}
-              onTrash={s.trashProfileById}
-              onRestoreTrash={s.restoreTrashedProfileById}
-              onDeleteTrash={s.permanentlyDeleteTrashedProfileById}
-              onRename={s.renameProfileById}
-              onExportAll={s.exportAllProfiles}
-            />
-          </Suspense>
-        </TabsContent>
+      <TransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        tabUrl={s.tabUrl}
+        tabId={s.tabId}
+        encryptExport={s.encryptExport}
+        setEncryptExport={s.setEncryptExport}
+        exportPass={s.exportPass}
+        setExportPass={s.setExportPass}
+        exportPass2={s.exportPass2}
+        setExportPass2={s.setExportPass2}
+        cryptoBusy={s.cryptoBusy}
+        onExport={() => void s.exportJson()}
+        fileInputRef={s.fileInputRef}
+        importEnvelope={s.importEnvelope}
+        importPayload={s.importPayload}
+        importDecryptPass={s.importDecryptPass}
+        setImportDecryptPass={s.setImportDecryptPass}
+        importBusy={s.importBusy}
+        originMismatch={s.originMismatch}
+        origin={s.origin}
+        onPickFile={(f) => void s.onPickImportFile(f)}
+        onDecrypt={() => void s.decryptAndLoadImport()}
+        onApply={() => s.setConfirmOpen(true)}
+      />
 
-        <TabsContent
-          value="export"
-          className="mt-0 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden data-[state=inactive]:hidden"
-        >
-          <Suspense fallback={<TabFallback />}>
-            <ExportTab
-              tabUrl={s.tabUrl}
-              filter={s.filter}
-              setFilter={s.setFilter}
-              onRefresh={s.refresh}
-              cookies={s.cookies}
-              lsEntries={s.lsEntries}
-              ssEntries={s.ssEntries}
-              filteredCookies={s.filteredCookies}
-              filteredLsKeys={s.filteredLsKeys}
-              filteredSsKeys={s.filteredSsKeys}
-              filteredIdbRows={s.filteredIdbRows}
-              idbRows={s.idbRows}
-              selected={s.selected}
-              toggleId={s.toggleId}
-              selectAllIn={s.selectAllIn}
-              encryptExport={s.encryptExport}
-              setEncryptExport={s.setEncryptExport}
-              exportPass={s.exportPass}
-              setExportPass={s.setExportPass}
-              exportPass2={s.exportPass2}
-              setExportPass2={s.setExportPass2}
-              onExport={s.exportJson}
-              onCopyJson={s.copyExportJson}
-              onSaveAsProfile={s.saveCurrentAsProfile}
-              profileBusy={s.profileBusy}
-              cryptoBusy={s.cryptoBusy}
-            />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent
-          value="import"
-          className="mt-0 flex flex-col gap-2 overflow-hidden data-[state=inactive]:hidden"
-        >
-          <Suspense fallback={<TabFallback />}>
-            <ImportTab
-              fileInputRef={s.fileInputRef}
-              tabUrl={s.tabUrl}
-              tabId={s.tabId}
-              importEnvelope={s.importEnvelope}
-              importPayload={s.importPayload}
-              importDecryptPass={s.importDecryptPass}
-              setImportDecryptPass={s.setImportDecryptPass}
-              importSelected={s.importSelected}
-              setImportSelected={s.setImportSelected}
-              importBusy={s.importBusy}
-              cryptoBusy={s.cryptoBusy}
-              importFilter={s.importFilter}
-              setImportFilter={s.setImportFilter}
-              filteredCookies={s.importFilteredCookies}
-              filteredLsKeys={s.importFilteredLsKeys}
-              filteredSsKeys={s.importFilteredSsKeys}
-              filteredIdbRows={s.importFilteredIdbRows}
-              idbRows={s.importIdbRows}
-              originMismatch={s.originMismatch}
-              origin={s.origin}
-              onPickFile={s.onPickImportFile}
-              onDecrypt={s.decryptAndLoadImport}
-              onRequestApply={() => s.setConfirmOpen(true)}
-            />
-          </Suspense>
-        </TabsContent>
-      </Tabs>
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        tabUrl={s.tabUrl}
+        reloadHint={browser.i18n.getMessage("advancedReloadHint")}
+        onCopyJson={() => void s.copyExportJson()}
+      />
 
       <AlertDialog open={s.confirmOpen} onOpenChange={s.setConfirmOpen}>
         <AlertDialogContent>

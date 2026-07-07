@@ -298,5 +298,100 @@
   },
   "uiModeSwitchedPopup": {
     "message": "Đã bật popup. Bấm icon trên thanh công cụ để mở popup."
+  },
+
+  "welcomeTitle": {
+    "message": "Chào mừng đến Identiti"
+  },
+  "welcomeBody": {
+    "message": "Lưu đăng nhập của một trang để khôi phục tức thì — trên máy này hoặc copy sang máy khác. Không có gì rời khỏi thiết bị của bạn. Không tài khoản, không cloud."
+  },
+  "welcomeSave": {
+    "message": "Lưu trang tôi đang mở"
+  },
+  "welcomeTransfer": {
+    "message": "Chuyển đăng nhập sang máy khác"
+  },
+  "welcomeDismiss": {
+    "message": "Đã hiểu"
+  },
+
+  "dashboardTitle": {
+    "message": "Đăng nhập đã lưu"
+  },
+  "dashboardSavedEmpty": {
+    "message": "Chưa có đăng nhập nào được lưu."
+  },
+  "dashboardSavedEmptyHint": {
+    "message": "Mở trang bạn muốn giữ, rồi bấm “Lưu trang này” bên dưới."
+  },
+  "saveCurrentLabel": {
+    "message": "Lưu trang này"
+  },
+  "saveCurrentHint": {
+    "message": "Ghi lại toàn bộ đăng nhập cho $1 để khôi phục bất cứ lúc nào."
+  },
+  "restore": {
+    "message": "Khôi phục"
+  },
+  "trash": {
+    "message": "Vào thùng rác"
+  },
+
+  "transferOpen": {
+    "message": "Chuyển sang máy khác"
+  },
+  "transferTitle": {
+    "message": "Chuyển đăng nhập sang máy khác"
+  },
+  "transferIntro": {
+    "message": "Xuất sẽ tạo một file chỉ trên máy này. Tự copy sang máy kia (USB, email gửi chính mình…), rồi mở Identiti ở đó và chọn “Khôi phục từ file”."
+  },
+  "transferExportFile": {
+    "message": "Tạo file sao lưu"
+  },
+  "transferImportFile": {
+    "message": "Khôi phục từ file"
+  },
+  "transferProtectPass": {
+    "message": "Bảo vệ file bằng mật khẩu"
+  },
+  "transferProtectHelp": {
+    "message": "Ai có file cũng dùng được đăng nhập của bạn, trừ khi bạn đặt mật khẩu."
+  },
+  "transferPickFile": {
+    "message": "Chọn file sao lưu"
+  },
+  "transferWrongSiteTitle": {
+    "message": "Khác trang"
+  },
+  "transferWrongSiteBody": {
+    "message": "Bản sao này dành cho $1, còn bạn đang ở $2. Bạn vẫn có thể khôi phục."
+  },
+  "transferApply": {
+    "message": "Khôi phục vào trang này"
+  },
+
+  "advancedOpen": {
+    "message": "Nâng cao"
+  },
+  "advancedTitle": {
+    "message": "Cài đặt nâng cao"
+  },
+  "advancedWhatCaptured": {
+    "message": "Lưu những gì"
+  },
+  "advancedWhatCapturedBody": {
+    "message": "Identiti lưu dữ liệu đăng nhập mà trang này dùng — cookie đăng nhập, giá trị đã lưu và dữ liệu ứng dụng cục bộ. Chỉ giữ trên máy này."
+  },
+  "advancedCopyJson": {
+    "message": "Sao chép dữ liệu thô (cho người rành)"
+  },
+  "advancedReloadHint": {
+    "message": "Sau khi khôi phục, tải lại trang nếu site chưa cập nhật."
+  },
+
+  "localFirstBadge": {
+    "message": "Trên máy bạn · không tải lên đâu"
   }
 }
