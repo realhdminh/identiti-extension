@@ -54,7 +54,7 @@ export function useCredentialManagerState() {
   const [cookies, setCookies] = useState<ExportedCookie[]>([])
   const [lsEntries, setLsEntries] = useState<Record<string, string>>({})
   const [ssEntries, setSsEntries] = useState<Record<string, string>>({})
-  const [idbData, setIdbData] = useState<IndexedDBExport>({})
+  const [idbData, _setIdbData] = useState<IndexedDBExport>({})
   const [filter, setFilter] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [importPayload, setImportPayload] =
@@ -85,7 +85,6 @@ export function useCredentialManagerState() {
   const refresh = useCallback(async () => {
     setLoading(true)
     setError(null)
-    toast.dismiss()
     try {
       const tabs = await browser.tabs.query({
         active: true,
@@ -99,7 +98,6 @@ export function useCredentialManagerState() {
         setCookies([])
         setLsEntries({})
         setSsEntries({})
-        setIdbData({})
         setSelected(new Set())
         return
       }
@@ -111,31 +109,29 @@ export function useCredentialManagerState() {
         setCookies([])
         setLsEntries({})
         setSsEntries({})
-        setIdbData({})
         setSelected(new Set())
         return
       }
 
-      const [ck, ls, ss, idb] = await Promise.all([
+      // Only the lightweight data needed for the dashboard. IndexedDB is
+      // heavy to dump, so it is read on demand (export/restore) instead of
+      // on every popup open.
+      const [ck, ls, ss] = await Promise.all([
         getCookiesForUrl(tab.url, tab.id),
         readPageLocalStorage(tab.id).catch(() => ({})),
         readPageSessionStorage(tab.id).catch(() => ({})),
-        readPageIndexedDB(tab.id).catch(() => ({}) as IndexedDBExport),
       ])
       const safeLs = ls ?? {}
       const safeSs = ss ?? {}
-      const safeIdb = idb ?? {}
 
       setCookies(ck)
       setLsEntries(safeLs)
       setSsEntries(safeSs)
-      setIdbData(safeIdb)
 
       const next = new Set<string>()
       for (const c of ck) next.add(cookieRowId(c))
       for (const k of Object.keys(safeLs)) next.add(lsKeyId(k))
       for (const k of Object.keys(safeSs)) next.add(ssKeyId(k))
-      for (const row of flattenIdbForUi(safeIdb)) next.add(row.id)
       setSelected(next)
     } catch (e) {
       setError(
@@ -147,12 +143,23 @@ export function useCredentialManagerState() {
       setCookies([])
       setLsEntries({})
       setSsEntries({})
-      setIdbData({})
       setSelected(new Set())
     } finally {
       setLoading(false)
     }
   }, [])
+
+  // Reads IndexedDB for the active tab on demand (export/restore flows).
+  const loadIdbForTab = useCallback(async (): Promise<IndexedDBExport> => {
+    if (tabId == null) return {}
+    try {
+      return (await readPageIndexedDB(tabId).catch(
+        () => ({})
+      )) as IndexedDBExport
+    } catch {
+      return {}
+    }
+  }, [tabId])
 
   const refreshProfiles = useCallback(async () => {
     if (!origin) {
@@ -338,13 +345,14 @@ export function useCredentialManagerState() {
         return
       }
     }
+    const idbToExport = await loadIdbForTab()
     const payload = buildSelectedExportPayload({
       origin,
       tabUrl,
       cookies,
       lsEntries,
       ssEntries,
-      idbData,
+      idbData: idbToExport,
       selected,
     })
     if (!payload) {
@@ -385,18 +393,19 @@ export function useCredentialManagerState() {
     selected,
     lsEntries,
     ssEntries,
-    idbData,
+    loadIdbForTab,
   ])
 
   const copyExportJson = useCallback(async () => {
     if (!origin || !tabUrl || encryptExport) return
+    const idbToCopy = await loadIdbForTab()
     const payload = buildSelectedExportPayload({
       origin,
       tabUrl,
       cookies,
       lsEntries,
       ssEntries,
-      idbData,
+      idbData: idbToCopy,
       selected,
     })
     if (!payload) {
@@ -417,7 +426,7 @@ export function useCredentialManagerState() {
     selected,
     lsEntries,
     ssEntries,
-    idbData,
+    loadIdbForTab,
   ])
 
   const exportAllProfiles = useCallback(async () => {
@@ -613,7 +622,7 @@ export function useCredentialManagerState() {
       } else {
         toast.success(browser.i18n.getMessage("importDone"))
       }
-      await refresh()
+      toast.message(browser.i18n.getMessage("reloadSuggestion"))
     } catch (e) {
       toast.error(
         browser.i18n.getMessage(
@@ -624,13 +633,14 @@ export function useCredentialManagerState() {
     } finally {
       setImportBusy(false)
     }
-  }, [importPayload, tabId, tabUrl, importSelected, refresh])
+  }, [importPayload, tabId, tabUrl, importSelected])
 
   const saveCurrentAsProfile = useCallback(
     async (name: string) => {
       if (!origin || !tabUrl) return
       setProfileBusy(true)
       try {
+        const idbToSave = await loadIdbForTab()
         const profile: CredentialProfile = {
           id: crypto.randomUUID(),
           name,
@@ -640,7 +650,7 @@ export function useCredentialManagerState() {
           cookies,
           localStorage: lsEntries,
           sessionStorage: ssEntries,
-          indexedDB: idbData,
+          indexedDB: idbToSave,
         }
         await saveProfile(profile)
         await refreshProfiles()
@@ -656,7 +666,15 @@ export function useCredentialManagerState() {
         setProfileBusy(false)
       }
     },
-    [origin, tabUrl, cookies, lsEntries, ssEntries, idbData, refreshProfiles]
+    [
+      origin,
+      tabUrl,
+      cookies,
+      lsEntries,
+      ssEntries,
+      loadIdbForTab,
+      refreshProfiles,
+    ]
   )
 
   const restoreProfile = useCallback(
@@ -682,7 +700,9 @@ export function useCredentialManagerState() {
         } else {
           toast.success(browser.i18n.getMessage("profileRestored"))
         }
-        await refresh()
+        // Do not silently refresh: the restored data only shows after the
+        // page reloads, so tell the user explicitly instead of appearing stuck.
+        toast.message(browser.i18n.getMessage("reloadSuggestion"))
       } catch (e) {
         toast.error(
           browser.i18n.getMessage(
@@ -694,7 +714,7 @@ export function useCredentialManagerState() {
         setProfileBusy(false)
       }
     },
-    [tabId, tabUrl, refresh]
+    [tabId, tabUrl]
   )
 
   const trashProfileById = useCallback(

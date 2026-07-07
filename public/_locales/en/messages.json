@@ -298,5 +298,100 @@
   },
   "uiModeSwitchedPopup": {
     "message": "Popup mode enabled. Click the toolbar icon to open the popup."
+  },
+
+  "welcomeTitle": {
+    "message": "Welcome to Identiti"
+  },
+  "welcomeBody": {
+    "message": "Save a site's login so you can bring it back instantly — on this computer or copied onto another. Nothing leaves your device. No account, no cloud."
+  },
+  "welcomeSave": {
+    "message": "Save the page I'm on"
+  },
+  "welcomeTransfer": {
+    "message": "Move a login to another device"
+  },
+  "welcomeDismiss": {
+    "message": "Got it"
+  },
+
+  "dashboardTitle": {
+    "message": "Your saved logins"
+  },
+  "dashboardSavedEmpty": {
+    "message": "No saved logins yet."
+  },
+  "dashboardSavedEmptyHint": {
+    "message": "Open the site you want to keep, then tap “Save this site” below."
+  },
+  "saveCurrentLabel": {
+    "message": "Save this site"
+  },
+  "saveCurrentHint": {
+    "message": "Captures the full login for $1 so you can restore it anytime."
+  },
+  "restore": {
+    "message": "Restore"
+  },
+  "trash": {
+    "message": "Move to trash"
+  },
+
+  "transferOpen": {
+    "message": "Move to another device"
+  },
+  "transferTitle": {
+    "message": "Move a login to another device"
+  },
+  "transferIntro": {
+    "message": "Export saves a file on this device only. Copy it to the other device yourself (USB, email to yourself, etc.), then open Identiti there and choose “Restore from file”."
+  },
+  "transferExportFile": {
+    "message": "Create backup file"
+  },
+  "transferImportFile": {
+    "message": "Restore from file"
+  },
+  "transferProtectPass": {
+    "message": "Protect file with a password"
+  },
+  "transferProtectHelp": {
+    "message": "Anyone with the file can use your login unless you set a password."
+  },
+  "transferPickFile": {
+    "message": "Choose backup file"
+  },
+  "transferWrongSiteTitle": {
+    "message": "Different site"
+  },
+  "transferWrongSiteBody": {
+    "message": "This backup is for $1, but you are on $2. You can still restore it."
+  },
+  "transferApply": {
+    "message": "Restore into this page"
+  },
+
+  "advancedOpen": {
+    "message": "Advanced"
+  },
+  "advancedTitle": {
+    "message": "Advanced settings"
+  },
+  "advancedWhatCaptured": {
+    "message": "What gets saved"
+  },
+  "advancedWhatCapturedBody": {
+    "message": "Identiti stores the login data this site uses — sign-in cookies, saved values, and local app data. It is kept only on this device."
+  },
+  "advancedCopyJson": {
+    "message": "Copy raw data (for experts)"
+  },
+  "advancedReloadHint": {
+    "message": "After restoring, reload the page if the site does not update."
+  },
+
+  "localFirstBadge": {
+    "message": "On this device · nothing uploaded"
   }
 }
