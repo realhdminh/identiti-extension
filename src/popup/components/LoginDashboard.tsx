@@ -76,7 +76,7 @@ export function LoginDashboard({
             <IconDeviceFloppy className="size-3.5" />
             {browser.i18n.getMessage("saveCurrentLabel")}
           </Button>
-          <p className="text-center text-[11px] text-muted-foreground leading-relaxed">
+          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
             {isWebUrl && origin
               ? browser.i18n.getMessage("saveCurrentHint", [siteName(origin)])
               : browser.i18n.getMessage("restrictedPage")}
@@ -86,16 +86,16 @@ export function LoginDashboard({
 
       {profiles.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1.5 px-4 py-8 text-center">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {browser.i18n.getMessage("dashboardSavedEmpty")}
           </p>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
             {browser.i18n.getMessage("dashboardSavedEmptyHint")}
           </p>
         </div>
       ) : (
         <ScrollArea className="min-h-0 flex-1">
-          <p className="px-1 pb-1.5 font-medium text-muted-foreground text-xs">
+          <p className="px-1 pb-1.5 text-xs font-medium text-muted-foreground">
             {browser.i18n.getMessage("dashboardTitle")}
           </p>
           <ul className="flex flex-col gap-2 pr-2">
@@ -106,7 +106,7 @@ export function LoginDashboard({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-[13px] leading-tight">
+                    <p className="truncate text-[13px] leading-tight font-medium">
                       {p.name}
                     </p>
                     <p className="truncate text-[11px] text-muted-foreground">

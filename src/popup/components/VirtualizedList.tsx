@@ -51,7 +51,7 @@ export function VirtualizedList<T>({
         style={{ height: `${virtualizer.getTotalSize()}px` }}
       >
         {virtualItems.map((virtualRow) => {
-          const item = items[virtualRow.index]
+          const item = items[virtualRow.index]!
           return (
             <li
               key={getKey(item, virtualRow.index)}

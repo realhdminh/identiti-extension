@@ -235,7 +235,7 @@ export function useCredentialManagerState() {
     return keys.filter(
       (k) =>
         k.toLowerCase().includes(filterLower) ||
-        lsEntries[k].toLowerCase().includes(filterLower)
+        lsEntries[k]!.toLowerCase().includes(filterLower)
     )
   }, [lsEntries, filterLower])
 
@@ -245,7 +245,7 @@ export function useCredentialManagerState() {
     return keys.filter(
       (k) =>
         k.toLowerCase().includes(filterLower) ||
-        ssEntries[k].toLowerCase().includes(filterLower)
+        ssEntries[k]!.toLowerCase().includes(filterLower)
     )
   }, [ssEntries, filterLower])
 
@@ -282,7 +282,7 @@ export function useCredentialManagerState() {
     return keys.filter(
       (k) =>
         k.toLowerCase().includes(importFilterLower) ||
-        importPayload.localStorage[k].toLowerCase().includes(importFilterLower)
+        importPayload.localStorage[k]!.toLowerCase().includes(importFilterLower)
     )
   }, [importPayload, importFilterLower])
 
@@ -295,7 +295,7 @@ export function useCredentialManagerState() {
     return keys.filter(
       (k) =>
         k.toLowerCase().includes(importFilterLower) ||
-        importPayload.sessionStorage[k]
+        importPayload.sessionStorage[k]!
           .toLowerCase()
           .includes(importFilterLower)
     )
@@ -530,13 +530,13 @@ export function useCredentialManagerState() {
     const lsToApply: Record<string, string> = {}
     for (const k of Object.keys(importPayload.localStorage)) {
       if (importSelected.has(lsKeyId(k))) {
-        lsToApply[k] = importPayload.localStorage[k]
+        lsToApply[k] = importPayload.localStorage[k]!
       }
     }
     const ssToApply: Record<string, string> = {}
     for (const k of Object.keys(importPayload.sessionStorage)) {
       if (importSelected.has(ssKeyId(k))) {
-        ssToApply[k] = importPayload.sessionStorage[k]
+        ssToApply[k] = importPayload.sessionStorage[k]!
       }
     }
     const { replace, merge } = partitionIndexedDBForImport(

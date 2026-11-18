@@ -4,7 +4,7 @@ export function bufToB64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf)
   let s = ""
   for (let i = 0; i < bytes.length; i++) {
-    s += String.fromCharCode(bytes[i])
+    s += String.fromCharCode(bytes[i]!)
   }
   return btoa(s)
 }

@@ -7,7 +7,18 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!src/components/ui"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/.wxt",
+      "!**/.output",
+      "!**/.agents",
+      "!**/.vscode",
+      "!**/src/components/ui",
+      "!**/*.svg",
+      "!bun.lock",
+      "!skills-lock.json"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -20,28 +31,30 @@
     "bracketSameLine": false,
     "bracketSpacing": true,
     "expand": "auto",
-    "useEditorconfig": true,
-    "includes": [
-      "**",
-      "!**/node_modules/",
-      "!**/coverage/",
-      "!**/.pnpm-store/",
-      "!**/pnpm-lock.yaml",
-      "!**/package-lock.json",
-      "!**/pnpm-lock.yaml",
-      "!**/yarn.lock",
-      "!**/.agents/"
-    ]
+    "useEditorconfig": true
   },
   "linter": {
     "enabled": true,
+    "domains": {
+      "react": "recommended",
+      "test": "recommended"
+    },
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedImports": { "level": "error", "fix": "safe" },
+        "noUnusedVariables": { "level": "error", "fix": "none" }
+      },
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
       "style": {
+        "noHexColors": "warn",
         "noNonNullAssertion": "off"
       },
       "nursery": {
-        "useSortedClasses": "warn"
+        "noFloatingPromises": "warn",
+        "useTailwindSortedClasses": "warn"
       }
     }
   },
@@ -59,15 +72,25 @@
     }
   },
   "html": {
+    "experimentalFullSupportEnabled": true,
     "formatter": {
-      "indentScriptAndStyle": false,
+      "indentScriptAndStyle": true,
       "selfCloseVoidElements": "always"
+    }
+  },
+  "markdown": {
+    "formatter": {
+      "enabled": false
     }
   },
   "css": {
     "parser": {
       "tailwindDirectives": true
     }
+  },
+  "tailwind": {
+    "stylesheet": "./src/entrypoints/popup/style.css",
+    "mergeFunctions": ["cn", "clsx"]
   },
   "assist": {
     "enabled": true,

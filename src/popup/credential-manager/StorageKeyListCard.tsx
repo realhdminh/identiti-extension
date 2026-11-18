@@ -111,7 +111,7 @@ export function StorageKeyListCard({
                   </div>
                 )}
                 {count === 0 ? (
-                  <div className="px-1 py-2 text-muted-foreground text-xs">
+                  <div className="px-1 py-2 text-xs text-muted-foreground">
                     {emptyMessage}
                   </div>
                 ) : (
@@ -133,10 +133,10 @@ export function StorageKeyListCard({
                             onCheckedChange={(vv) => onToggle(id, vv === true)}
                           />
                           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <span className="block break-all font-medium text-[12px] leading-tight">
+                            <span className="block text-[12px] leading-tight font-medium break-all">
                               {k}
                             </span>
-                            <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                            <span className="block font-mono text-[10px] break-all text-muted-foreground">
                               {truncate(v, 48)}
                             </span>
                           </span>

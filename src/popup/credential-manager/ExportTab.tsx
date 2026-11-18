@@ -203,7 +203,7 @@ export function ExportTab({
                 >
                   {browser.i18n.getMessage("viewDetails")}
                 </DialogTrigger>
-                <DialogContent className="max-w-[460px] p-0">
+                <DialogContent className="max-w-115 p-0">
                   <DialogHeader className="px-4 pt-4">
                     <DialogTitle className="flex items-center gap-1.5 text-sm">
                       <IconCookie className="size-3.5 opacity-50" />
@@ -243,12 +243,12 @@ export function ExportTab({
                       </div>
                     )}
                     {filteredCookies.length === 0 ? (
-                      <div className="px-1 py-2 text-muted-foreground text-xs">
+                      <div className="px-1 py-2 text-xs text-muted-foreground">
                         {browser.i18n.getMessage("emptyCookies")}
                       </div>
                     ) : (
                       <VirtualizedList
-                        className="h-[380px] overflow-auto pr-2"
+                        className="h-95 overflow-auto pr-2"
                         items={filteredCookies}
                         getKey={(c) => cookieRowId(c)}
                         renderItem={(c) => {
@@ -266,13 +266,13 @@ export function ExportTab({
                                 }
                               />
                               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                <span className="block break-all font-medium text-[12px] leading-tight">
+                                <span className="block text-[12px] leading-tight font-medium break-all">
                                   {browser.i18n.getMessage("cookieLabel", [
                                     c.name,
                                     c.domain,
                                   ])}
                                 </span>
-                                <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                <span className="block font-mono text-[10px] break-all text-muted-foreground">
                                   {truncate(c.value, 64)}
                                 </span>
                               </span>
@@ -349,7 +349,7 @@ export function ExportTab({
                 >
                   {browser.i18n.getMessage("viewDetails")}
                 </DialogTrigger>
-                <DialogContent className="max-w-[460px] p-0">
+                <DialogContent className="max-w-115 p-0">
                   <DialogHeader className="px-4 pt-4">
                     <DialogTitle className="flex items-center gap-1.5 text-sm">
                       <IconDatabase className="size-3.5 opacity-50" />
@@ -395,12 +395,12 @@ export function ExportTab({
                       </div>
                     )}
                     {filteredIdbRows.length === 0 ? (
-                      <div className="px-1 py-2 text-muted-foreground text-xs">
+                      <div className="px-1 py-2 text-xs text-muted-foreground">
                         {browser.i18n.getMessage("emptyIndexedDB")}
                       </div>
                     ) : (
                       <VirtualizedList
-                        className="h-[380px] overflow-auto pr-2"
+                        className="h-95 overflow-auto pr-2"
                         items={filteredIdbRows}
                         getKey={(r) => r.id}
                         renderItem={(r, idx) => (
@@ -416,10 +416,10 @@ export function ExportTab({
                               }
                             />
                             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                              <span className="block font-medium text-[12px] leading-tight">
+                              <span className="block text-[12px] leading-tight font-medium">
                                 {r.database} / {r.store}
                               </span>
-                              <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                              <span className="block font-mono text-[10px] break-all text-muted-foreground">
                                 {truncate(JSON.stringify(r.key), 56)} ·{" "}
                                 {truncate(r.preview, 40)}
                               </span>
@@ -439,14 +439,14 @@ export function ExportTab({
                     String(idbRows.length),
                   ])}
             </CardDescription>
-            <p className="shrink-0 text-[10px] text-muted-foreground leading-snug">
+            <p className="shrink-0 text-[10px] leading-snug text-muted-foreground">
               {browser.i18n.getMessage("idbBlobNote")}
             </p>
           </CardHeader>
         </Card>
       </div>
 
-      <div className="flex shrink-0 flex-col gap-2 border-border border-t pt-2">
+      <div className="flex shrink-0 flex-col gap-2 border-t border-border pt-2">
         <label
           htmlFor="export-encrypt-toggle"
           className="flex cursor-pointer items-center gap-2 text-[11px]"

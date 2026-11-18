@@ -21,11 +21,11 @@ export function buildSelectedExportPayload(input: {
   )
   const pickLs: Record<string, string> = {}
   for (const k of Object.keys(input.lsEntries)) {
-    if (input.selected.has(lsKeyId(k))) pickLs[k] = input.lsEntries[k]
+    if (input.selected.has(lsKeyId(k))) pickLs[k] = input.lsEntries[k]!
   }
   const pickSs: Record<string, string> = {}
   for (const k of Object.keys(input.ssEntries)) {
-    if (input.selected.has(ssKeyId(k))) pickSs[k] = input.ssEntries[k]
+    if (input.selected.has(ssKeyId(k))) pickSs[k] = input.ssEntries[k]!
   }
   const pickIdb = filterIndexedDBExport(input.idbData, input.selected)
   const anyIdb = Object.keys(pickIdb).length > 0

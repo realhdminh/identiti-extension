@@ -338,7 +338,7 @@ export function ImportTab({
                           </div>
                         )}
                         {filteredCookies.length === 0 ? (
-                          <div className="px-1 py-2 text-muted-foreground text-xs">
+                          <div className="px-1 py-2 text-xs text-muted-foreground">
                             {browser.i18n.getMessage("emptyCookies")}
                           </div>
                         ) : (
@@ -362,13 +362,13 @@ export function ImportTab({
                                     }
                                   />
                                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                    <span className="block break-all font-medium text-[12px] leading-tight">
+                                    <span className="block text-[12px] leading-tight font-medium break-all">
                                       {browser.i18n.getMessage("cookieLabel", [
                                         c.name,
                                         c.domain,
                                       ])}
                                     </span>
-                                    <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                    <span className="block font-mono text-[10px] break-all text-muted-foreground">
                                       {truncate(c.value, 64)}
                                     </span>
                                   </span>
@@ -502,7 +502,7 @@ export function ImportTab({
                           </div>
                         )}
                         {filteredIdbRows.length === 0 ? (
-                          <div className="px-1 py-2 text-muted-foreground text-xs">
+                          <div className="px-1 py-2 text-xs text-muted-foreground">
                             {browser.i18n.getMessage("emptyIndexedDB")}
                           </div>
                         ) : (
@@ -523,10 +523,10 @@ export function ImportTab({
                                   }
                                 />
                                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                  <span className="block font-medium text-[12px] leading-tight">
+                                  <span className="block text-[12px] leading-tight font-medium">
                                     {r.database} / {r.store}
                                   </span>
-                                  <span className="block break-all font-mono text-[10px] text-muted-foreground">
+                                  <span className="block font-mono text-[10px] break-all text-muted-foreground">
                                     {truncate(JSON.stringify(r.key), 40)} ·{" "}
                                     {truncate(r.preview, 40)}
                                   </span>
@@ -546,7 +546,7 @@ export function ImportTab({
                         String(idbRows.length),
                       ])}
                 </CardDescription>
-                <p className="shrink-0 text-[10px] text-muted-foreground leading-snug">
+                <p className="shrink-0 text-[10px] leading-snug text-muted-foreground">
                   {browser.i18n.getMessage("idbBlobNote")}
                 </p>
               </CardHeader>

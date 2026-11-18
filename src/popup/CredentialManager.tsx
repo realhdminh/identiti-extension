@@ -73,17 +73,17 @@ export function CredentialManager({
       className={
         isSidepanel
           ? "flex min-h-screen w-full flex-col gap-3 overflow-hidden p-4"
-          : "flex max-h-[680px] w-[480px] flex-col gap-3 overflow-hidden p-4"
+          : "flex max-h-170 w-120 flex-col gap-3 overflow-hidden p-4"
       }
     >
       <header className="shrink-0 space-y-1.5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 space-y-1">
-            <h1 className="font-heading font-semibold text-base tracking-tight">
+            <h1 className="font-heading text-base font-semibold tracking-tight">
               {browser.i18n.getMessage("heading")}
             </h1>
             {s.tabUrl && isSupportedWebUrl(s.tabUrl) && (
-              <p className="break-all text-muted-foreground text-xs leading-snug">
+              <p className="text-xs leading-snug break-all text-muted-foreground">
                 {browser.i18n.getMessage("currentSite", s.tabUrl)}
               </p>
             )}

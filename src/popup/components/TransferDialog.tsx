@@ -106,7 +106,7 @@ export function TransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[460px] p-0">
+      <DialogContent className="max-w-115 p-0">
         <DialogHeader className="px-5 pt-5">
           <DialogTitle className="flex items-center gap-1.5 text-sm">
             <IconUpload className="size-3.5 opacity-50" />
@@ -119,7 +119,7 @@ export function TransferDialog({
 
         <div className="flex flex-col gap-3 px-5 pb-5">
           <section className="flex flex-col gap-2.5 rounded-lg border border-border bg-card/50 p-3">
-            <p className="font-medium text-xs">
+            <p className="text-xs font-medium">
               {browser.i18n.getMessage("transferExportFile")}
             </p>
             <label
@@ -191,7 +191,7 @@ export function TransferDialog({
                     </Field>
                   )}
                 </form.Field>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
                   {browser.i18n.getMessage("transferProtectHelp")}
                 </p>
               </div>
@@ -222,7 +222,7 @@ export function TransferDialog({
           </section>
 
           <section className="flex flex-col gap-2.5 rounded-lg border border-border bg-card/50 p-3">
-            <p className="font-medium text-xs">
+            <p className="text-xs font-medium">
               {browser.i18n.getMessage("transferImportFile")}
             </p>
             <input
@@ -248,7 +248,7 @@ export function TransferDialog({
             </Button>
 
             {showDecrypt && (
-              <div className="flex flex-col gap-2.5 border-border border-t pt-3">
+              <div className="flex flex-col gap-2.5 border-t border-border pt-3">
                 <p className="text-[11px] text-muted-foreground">
                   {browser.i18n.getMessage("encryptedFileHelp")}
                 </p>
@@ -275,7 +275,7 @@ export function TransferDialog({
             )}
 
             {showApply && (
-              <div className="flex flex-col gap-2.5 border-border border-t pt-3">
+              <div className="flex flex-col gap-2.5 border-t border-border pt-3">
                 {originMismatch && (
                   <Alert variant="destructive">
                     <AlertTitle className="text-xs">
@@ -289,7 +289,7 @@ export function TransferDialog({
                     </AlertDescription>
                   </Alert>
                 )}
-                <p className="break-all text-[11px] text-muted-foreground">
+                <p className="text-[11px] break-all text-muted-foreground">
                   {importPayload?.origin}
                 </p>
                 <Button

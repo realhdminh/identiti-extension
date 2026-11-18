@@ -9,3 +9,6 @@ export type IndexedDBDatabaseDump = {
 }
 
 export type IndexedDBExport = Record<string, IndexedDBDatabaseDump>
+
+/** Lightweight listing of live databases/stores, used to pick safe apply mode. */
+export type IndexedDBMeta = Record<string, { version: number; stores: string[] }>

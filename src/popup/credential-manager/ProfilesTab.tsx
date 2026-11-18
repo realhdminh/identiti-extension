@@ -133,7 +133,7 @@ export function ProfilesTab({
           </p>
         </div>
       ) : (
-        <ScrollArea className="max-h-[280px] min-h-0">
+        <ScrollArea className="max-h-70 min-h-0">
           <ul className="flex flex-col gap-1.5 pr-2">
             {profiles.map((p) => {
               const isRenaming = renamingId === p.id
@@ -187,7 +187,7 @@ export function ProfilesTab({
                   ) : (
                     <>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="min-w-0 flex-1 truncate font-medium text-[12px]">
+                        <span className="min-w-0 flex-1 truncate text-[12px] font-medium">
                           {p.name}
                         </span>
                         <div className="flex shrink-0 items-center gap-0.5">
@@ -226,7 +226,7 @@ export function ProfilesTab({
                           </Button>
                         </div>
                       </div>
-                      <p className="text-[10px] text-muted-foreground leading-snug">
+                      <p className="text-[10px] leading-snug text-muted-foreground">
                         {browser.i18n.getMessage("profileItemCounts", [
                           String(p.counts.cookies),
                           String(p.counts.localStorage),
@@ -247,11 +247,11 @@ export function ProfilesTab({
       )}
 
       {trashedProfiles.length > 0 && (
-        <div className="flex min-h-0 flex-col gap-1.5 border-border border-t pt-2">
-          <p className="font-medium text-[11px]">
+        <div className="flex min-h-0 flex-col gap-1.5 border-t border-border pt-2">
+          <p className="text-[11px] font-medium">
             {browser.i18n.getMessage("trashSectionTitle")}
           </p>
-          <ScrollArea className="max-h-[140px]">
+          <ScrollArea className="max-h-35">
             <ul className="flex flex-col gap-1 pr-2">
               {trashedProfiles.map((p) => (
                 <li

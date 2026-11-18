@@ -84,7 +84,7 @@ bun run format
 
 ## Contributing
 
-See `CLAUDE.md` for project conventions and guidelines.
+See `AGENTS.md` for project conventions and guidelines.
 
 ## License
 

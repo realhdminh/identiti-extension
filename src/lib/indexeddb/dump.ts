@@ -7,7 +7,11 @@ import {
 } from "./codec"
 import type { IDBPDatabase } from "./io"
 import { openDb } from "./io"
-import type { IndexedDBExport, IndexedDBStoreDump } from "./types"
+import type {
+  IndexedDBExport,
+  IndexedDBMeta,
+  IndexedDBStoreDump,
+} from "./types"
 
 async function readStoreAll(
   db: IDBPDatabase,
@@ -83,6 +87,40 @@ async function hydrateBlobPlaceholders(
       db.close()
     }
   }
+}
+
+/**
+ * Lists databases and their store names without reading any records. Used
+ * before an import so we never delete a database that the snapshot only
+ * covers partially.
+ */
+export async function dumpPageIndexedDBMeta(): Promise<IndexedDBMeta> {
+  const out: IndexedDBMeta = {}
+  const listFn = indexedDB.databases?.bind(indexedDB)
+  if (typeof listFn !== "function") {
+    return out
+  }
+  let list: { name?: string; version?: number }[]
+  try {
+    list = await listFn()
+  } catch {
+    return out
+  }
+  for (const meta of list) {
+    const name = meta.name
+    if (name == null) continue
+    try {
+      const db = await openDb(name)
+      out[name] = {
+        version: db.version,
+        stores: Array.from(db.objectStoreNames),
+      }
+      db.close()
+    } catch {
+      /* DB may be upgrading or blocked; treat as unknown */
+    }
+  }
+  return out
 }
 
 export async function dumpPageIndexedDB(): Promise<IndexedDBExport> {

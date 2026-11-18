@@ -24,10 +24,10 @@ export function FirstRun({ onSave, onTransfer, className }: FirstRunProps) {
         <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <IconDeviceFloppy className="size-5" />
         </div>
-        <h1 className="font-heading font-semibold text-base tracking-tight">
+        <h1 className="font-heading text-base font-semibold tracking-tight">
           {browser.i18n.getMessage("welcomeTitle")}
         </h1>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           {browser.i18n.getMessage("welcomeBody")}
         </p>
       </div>

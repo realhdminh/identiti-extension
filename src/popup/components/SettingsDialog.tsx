@@ -33,10 +33,10 @@ export function SettingsDialog({
         </DialogHeader>
         <div className="flex flex-col gap-4 px-5 pb-5">
           <section className="flex flex-col gap-2">
-            <p className="font-medium text-xs">
+            <p className="text-xs font-medium">
               {browser.i18n.getMessage("advancedWhatCaptured")}
             </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               {browser.i18n.getMessage("advancedWhatCapturedBody")}
             </p>
           </section>
@@ -44,7 +44,7 @@ export function SettingsDialog({
           <Separator />
 
           <section className="flex flex-col gap-2">
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
               {reloadHint}
             </p>
             <Button
