@@ -4,9 +4,9 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
+    "types": ["bun"],
     "paths": {
       "@/*": ["./src/*"]
     }
-  },
-  "exclude": ["**/*.test.ts"]
+  }
 }

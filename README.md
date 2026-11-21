@@ -18,15 +18,22 @@ Export files can be optionally encrypted.
 
 ## Features
 
-- Export selected data from the currently active tab
-- Import and apply data back to the active site
-- Fine-grained IndexedDB handling with selection + replace/merge semantics
-- Optional export encryption (PBKDF2 (SHA-256) + AES-GCM)
+- Capture cookies (including same-site subdomains and supported partitions), local and session storage, and IndexedDB for the active site.
+- Restore only to the original HTTP(S) origin, using the destination tab's cookie store. Current exports replace cookies and web storage, plus the IndexedDB stores they contain. Older v1/v2 files and profiles merge instead.
+- Restore IndexedDB without upgrading existing databases. Failed writes roll back that database's transaction; uncovered stores keep their data.
+- Create a safety backup before changing a session. Undo is available only in the same tab, origin, and cookie store, and only until a newer change to that site or a browser restart. Undo leaves empty schemas in place when a restore created a database.
+- Use optional PBKDF2 (SHA-256) + AES-GCM encryption for single-site files. Bulk profile exports are plaintext.
+
+Identiti only clears cookies present in the safety backup. New cookie identities created after capture are left alone; if a captured cookie remains, Identiti reports a partial restore. It does not clear Cache Storage or unregister service workers. Some sites expire, bind, or reject transferred sessions, and browser-specific data may not be portable. Identiti stops if it cannot make a safe backup.
+
+Requires Chromium 130+ or Firefox 132+.
 
 ## Security & Privacy
 
 - Backups may contain sensitive data (cookies, storage keys, and IndexedDB records). Store exported files safely and do not share them.
 - Export/import operations are performed locally in your browser. No network calls are required for the core features.
+- Deleted accounts move to a local trash and can be restored; nothing is transmitted anywhere.
+- Permissions used: `storage` and `unlimitedStorage` (profiles and safety backups), `tabs` and `<all_urls>` (identify and communicate with the active site), `cookies` (read/write the destination cookie store), `contextMenus` (open Identiti for the current site).
 
 ## Tech Stack
 

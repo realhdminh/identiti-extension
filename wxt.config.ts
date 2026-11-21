@@ -11,22 +11,43 @@ export default defineConfig({
     chromiumArgs: ["--user-data-dir=./.wxt/chrome-data"],
     disabled: true,
   },
-  manifest: {
+  vite: () => ({
+    build: {
+      chunkSizeWarningLimit: 1000,
+    },
+  }),
+  manifest: ({ browser, manifestVersion }) => ({
     name: "__MSG_extensionName__",
     description: "__MSG_extensionDescription__",
     default_locale: "en",
-    permissions: ["storage", "tabs", "cookies", "scripting", "contextMenus"],
+    ...(browser === "chrome" ? { minimum_chrome_version: "130" } : {}),
+    permissions: [
+      "storage",
+      "tabs",
+      "cookies",
+      "contextMenus",
+      "unlimitedStorage",
+    ],
     host_permissions: ["<all_urls>"],
     incognito: "spanning",
-    action: {},
-    commands: {
-      "open-import": {
-        description: "__MSG_cmdOpenImport__",
-        suggested_key: {
-          default: "Ctrl+Shift+I",
-          mac: "Command+Shift+I",
+    browser_specific_settings: {
+      gecko: {
+        id: "identiti@identiti.local",
+        strict_min_version: "132.0",
+        // Firefox requires an explicit data-collection declaration for new
+        // add-ons. Identiti never collects or transmits anything.
+        data_collection_permissions: {
+          required: ["none"],
         },
       },
     },
-  },
+    commands: {
+      [manifestVersion === 2 ? "_execute_browser_action" : "_execute_action"]: {
+        description: "__MSG_cmdOpenImport__",
+        suggested_key: {
+          default: "Alt+Shift+Y",
+        },
+      },
+    },
+  }),
 })

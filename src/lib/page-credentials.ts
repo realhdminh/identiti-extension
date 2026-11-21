@@ -1,10 +1,14 @@
+import { getDomain } from "tldts"
 import type { Browser } from "wxt/browser"
-import type { IndexedDBExport } from "@/lib/indexeddb"
-import { filterIndexedDBExport, idbRecordId } from "@/lib/indexeddb"
-import { sendMessage } from "@/lib/messaging"
+import type {
+  IndexedDBExport,
+  IndexedDBScope,
+  IndexedDBStoreDump,
+} from "@/lib/indexeddb"
+import { type PageIdentity, sendMessage } from "@/lib/messaging"
 import { isRecord, isStringRecord } from "@/lib/type-guards"
 
-export const EXPORT_SCHEMA_VERSION = 2 as const
+export const EXPORT_SCHEMA_VERSION = 3 as const
 export const MIN_IMPORT_SCHEMA_VERSION = 1 as const
 
 /** Runtime cookie from `browser.cookies` (Chrome types via `@wxt-dev/browser` / `@types/chrome`). */
@@ -13,21 +17,35 @@ type BrowserCookie = Browser.cookies.Cookie
 /** Cookie in export JSON / UI — matches extension cookie shape; `storeId` defaultable when importing older files. */
 export type ExportedCookie = Browser.cookies.Cookie
 
+export function environmentsDiffer(
+  a?: EnvironmentSnapshot,
+  b?: EnvironmentSnapshot
+): boolean {
+  if (!a || !b) return false
+  return a.platform !== b.platform || a.userAgent !== b.userAgent
+}
+
+export type EnvironmentSnapshot = {
+  userAgent: string
+  platform: string
+  language: string
+  screen?: string
+  timezone?: string
+}
+
 export type CredentialExportFile = {
-  identitiVersion:
-    | typeof MIN_IMPORT_SCHEMA_VERSION
-    | typeof EXPORT_SCHEMA_VERSION
+  identitiVersion: 1 | 2 | 3
+  environment?: EnvironmentSnapshot
   exportedAt: string
   origin: string
-  pageUrl?: string
   cookies: ExportedCookie[]
   localStorage: Record<string, string>
   sessionStorage: Record<string, string>
   indexedDB: IndexedDBExport
 }
 
-function assertIdentitiVersion(v: unknown): asserts v is 1 | 2 {
-  if (v !== 1 && v !== 2) throw new Error("BAD_VERSION")
+function assertIdentitiVersion(v: unknown): asserts v is 1 | 2 | 3 {
+  if (v !== 1 && v !== 2 && v !== 3) throw new Error("BAD_VERSION")
 }
 
 function parseSameSiteString(raw: string): BrowserCookie["sameSite"] {
@@ -68,72 +86,120 @@ export function originFromUrl(url: string): string {
   return new URL(url).origin
 }
 
-export function serializeCookie(c: BrowserCookie): ExportedCookie {
-  return {
-    name: c.name,
-    value: c.value,
-    domain: c.domain,
-    path: c.path,
-    secure: c.secure,
-    httpOnly: c.httpOnly,
-    sameSite: c.sameSite,
-    expirationDate: c.expirationDate,
-    hostOnly: c.hostOnly,
-    session: c.session,
-    storeId: c.storeId,
-    partitionKey: c.partitionKey,
-  }
+function partitionKeyId(key: ExportedCookie["partitionKey"]) {
+  return [
+    key?.topLevelSite ? new URL(key.topLevelSite).origin : null,
+    key?.hasCrossSiteAncestor ?? false,
+  ]
 }
 
-export function cookieRowId(c: ExportedCookie): string {
-  return `c:${c.storeId ?? ""}|${c.domain}|${c.path}|${c.name}`
+function cookieId(cookie: ExportedCookie) {
+  return JSON.stringify([
+    cookieHost(cookie.domain),
+    cookie.path,
+    cookie.name,
+    cookie.hostOnly,
+    ...partitionKeyId(cookie.partitionKey),
+  ])
 }
 
-function bestEffortRegistrableDomain(hostname: string): string {
-  // Heuristic only: we want "everything under this site" (for subdomain cookies).
-  // For complex public-suffix cases, Chrome's cookie API still returns best-effort within permissions.
-  if (hostname === "localhost") return hostname
-  if (hostname.includes(":")) return hostname // IPv6-ish
-  const parts = hostname.split(".").filter(Boolean)
-  if (parts.length <= 2) return hostname
-  const last2 = parts.slice(-2).join(".")
-  return last2
+function siteHost(hostname: string): string {
+  return getDomain(hostname, { allowPrivateDomains: true }) ?? hostname
 }
 
-function parseIndexedDBImport(raw: unknown): IndexedDBExport {
-  if (!isRecord(raw)) return {}
-  const out: IndexedDBExport = {}
-  for (const [dbName, dbVal] of Object.entries(raw)) {
-    if (!isRecord(dbVal)) continue
-    const d = dbVal
-    const version =
-      typeof d.version === "number" ? d.version : Number(d.version) || 1
-    const storesRaw = d.stores
-    const stores: {
-      name: string
-      records: { key: unknown; value: unknown }[]
-    }[] = []
-    if (Array.isArray(storesRaw)) {
-      for (const s of storesRaw) {
-        if (!isRecord(s)) continue
-        const st = s
-        const name = typeof st.name === "string" ? st.name : ""
-        if (!name) continue
-        const recs: { key: unknown; value: unknown }[] = []
-        if (Array.isArray(st.records)) {
-          for (const r of st.records) {
-            if (!isRecord(r)) continue
-            const row = r
-            if (!("key" in row) || !("value" in row)) continue
-            recs.push({ key: row.key, value: row.value })
+function schemefulSite(url: URL): string {
+  return `${url.protocol}//${siteHost(url.hostname)}`
+}
+
+function cookieHost(domain: string): string {
+  const host = domain.startsWith(".") ? domain.slice(1) : domain
+  if (!host || /[\s/@?#\\%]/.test(host)) throw new Error("BAD_COOKIE_DOMAIN")
+  const url = new URL(`https://${host}`)
+  if (url.hostname !== host.toLowerCase()) throw new Error("BAD_COOKIE_DOMAIN")
+  return url.hostname
+}
+
+function readKeyPath(value: unknown): value is string | string[] {
+  return (
+    typeof value === "string" ||
+    (Array.isArray(value) && value.every((key) => typeof key === "string"))
+  )
+}
+
+function parseIndexedDBImport(raw: unknown, version: 2 | 3): IndexedDBExport {
+  if (raw == null && version === 2) return {}
+  if (!isRecord(raw)) throw new Error("BAD_IDB")
+  return Object.fromEntries(
+    Object.entries(raw).map(([name, database]) => {
+      if (
+        !isRecord(database) ||
+        typeof database.version !== "number" ||
+        !Number.isSafeInteger(database.version) ||
+        database.version < 1 ||
+        !Array.isArray(database.stores)
+      )
+        throw new Error("BAD_IDB")
+      const names = new Set<string>()
+      const stores = database.stores.map(
+        (store: unknown): IndexedDBStoreDump => {
+          if (
+            !isRecord(store) ||
+            typeof store.name !== "string" ||
+            names.has(store.name) ||
+            !Array.isArray(store.records)
+          )
+            throw new Error("BAD_IDB_STORE")
+          names.add(store.name)
+          const entry: IndexedDBStoreDump = {
+            name: store.name,
+            records: store.records.map((row: unknown) => {
+              if (
+                !isRecord(row) ||
+                !Object.hasOwn(row, "key") ||
+                !Object.hasOwn(row, "value")
+              ) {
+                throw new Error("BAD_IDB_RECORD")
+              }
+              return { key: row.key, value: row.value }
+            }),
           }
+          if (store.keyPath !== undefined) {
+            if (store.keyPath !== null && !readKeyPath(store.keyPath)) {
+              throw new Error("BAD_IDB_KEY_PATH")
+            }
+            entry.keyPath = store.keyPath
+          }
+          if (typeof store.autoIncrement === "boolean")
+            entry.autoIncrement = store.autoIncrement
+          if (store.indexes !== undefined) {
+            if (!Array.isArray(store.indexes)) throw new Error("BAD_IDB_INDEX")
+            entry.indexes = store.indexes.map((index: unknown) => {
+              if (
+                !isRecord(index) ||
+                typeof index.name !== "string" ||
+                !readKeyPath(index.keyPath)
+              ) {
+                throw new Error("BAD_IDB_INDEX")
+              }
+              return {
+                name: index.name,
+                keyPath: index.keyPath,
+                unique: index.unique === true,
+                multiEntry: index.multiEntry === true,
+              }
+            })
+          }
+          if (store.valueEncoding === "graph") entry.valueEncoding = "graph"
+          else if (version === 2 || store.valueEncoding === "legacy")
+            entry.valueEncoding = "legacy"
+          else if (store.valueEncoding !== undefined)
+            throw new Error("BAD_IDB_ENCODING")
+          return entry
         }
-        stores.push({ name, records: recs })
-      }
-    }
-    if (stores.length > 0) out[dbName] = { version, stores }
-  }
-  return out
+      )
+      return [name, { version: database.version, stores }]
+    })
+  )
 }
 
 export function parseExportFile(text: string): CredentialExportFile {
@@ -144,12 +210,31 @@ export function parseExportFile(text: string): CredentialExportFile {
   const o = data
   const ver = o.identitiVersion
   assertIdentitiVersion(ver)
-  if (typeof o.exportedAt !== "string" || typeof o.origin !== "string") {
+  if (
+    typeof o.exportedAt !== "string" ||
+    typeof o.origin !== "string" ||
+    !isSupportedWebUrl(o.origin) ||
+    new URL(o.origin).origin !== o.origin
+  ) {
     throw new Error("MISSING_META")
   }
   if (!Array.isArray(o.cookies)) {
     throw new Error("BAD_COOKIES")
   }
+  let environment: EnvironmentSnapshot | undefined
+  if (isRecord(o.environment)) {
+    const e = o.environment
+    if (typeof e.userAgent === "string") {
+      environment = {
+        userAgent: e.userAgent,
+        platform: typeof e.platform === "string" ? e.platform : "",
+        language: typeof e.language === "string" ? e.language : "",
+        screen: typeof e.screen === "string" ? e.screen : undefined,
+        timezone: typeof e.timezone === "string" ? e.timezone : undefined,
+      }
+    }
+  }
+
   const normalizedCookies: ExportedCookie[] = []
   for (const item of o.cookies) {
     if (!isRecord(item)) throw new Error("BAD_COOKIES")
@@ -158,6 +243,12 @@ export function parseExportFile(text: string): CredentialExportFile {
       throw new Error("BAD_COOKIES")
     }
     if (typeof c.domain !== "string") throw new Error("BAD_COOKIES")
+    if (typeof c.firstPartyDomain === "string" && c.firstPartyDomain !== "") {
+      throw new Error("UNSUPPORTED_FIRST_PARTY_COOKIE")
+    }
+    const partitionKey = parsePartitionKey(c.partitionKey)
+    if (c.partitionKey != null && !partitionKey)
+      throw new Error("BAD_COOKIE_PARTITION")
     const path = typeof c.path === "string" ? c.path : "/"
     const sameSiteRaw =
       typeof c.sameSite === "string" ? c.sameSite : "unspecified"
@@ -174,7 +265,7 @@ export function parseExportFile(text: string): CredentialExportFile {
       hostOnly: c.hostOnly === true,
       session: c.session === true,
       storeId: typeof c.storeId === "string" ? c.storeId : "",
-      partitionKey: parsePartitionKey(c.partitionKey),
+      partitionKey,
     })
   }
   if (!isStringRecord(o.localStorage)) {
@@ -184,19 +275,19 @@ export function parseExportFile(text: string): CredentialExportFile {
 
   let sessionStorage: Record<string, string> = {}
   let indexedDB: IndexedDBExport = {}
-  if (ver === 2) {
-    if (o.sessionStorage !== undefined && o.sessionStorage !== null) {
+  if (ver === 2 || ver === 3) {
+    if (ver === 3 || o.sessionStorage != null) {
       if (!isStringRecord(o.sessionStorage)) throw new Error("BAD_SS")
       sessionStorage = { ...o.sessionStorage }
     }
-    indexedDB = parseIndexedDBImport(o.indexedDB)
+    indexedDB = parseIndexedDBImport(o.indexedDB, ver)
   }
 
   return {
     identitiVersion: ver,
     exportedAt: o.exportedAt,
     origin: o.origin,
-    pageUrl: typeof o.pageUrl === "string" ? o.pageUrl : undefined,
+    environment,
     cookies: normalizedCookies,
     localStorage,
     sessionStorage,
@@ -204,283 +295,314 @@ export function parseExportFile(text: string): CredentialExportFile {
   }
 }
 
-export function partitionIndexedDBForImport(
-  payload: CredentialExportFile,
-  selectedIds: Set<string>
-): { replace: IndexedDBExport; merge: IndexedDBExport } {
-  const replace: IndexedDBExport = {}
-  const merge: IndexedDBExport = {}
-  for (const [dbName, data] of Object.entries(payload.indexedDB)) {
-    const allInDbSelected = data.stores.every((st) =>
-      st.records.every((rec) =>
-        selectedIds.has(idbRecordId(dbName, st.name, rec.key))
-      )
-    )
-    const filtered = filterIndexedDBExport({ [dbName]: data }, selectedIds)
-    const part = filtered[dbName]
-    if (!part) continue
-    if (allInDbSelected) replace[dbName] = part
-    else merge[dbName] = part
+export type SiteTarget = PageIdentity & {
+  tabId: number
+  url: string
+  storeId: string
+}
+
+export async function storeIdForTab(tabId: number): Promise<string> {
+  const tab = await browser.tabs.get(tabId)
+  if ("cookieStoreId" in tab && typeof tab.cookieStoreId === "string") {
+    return tab.cookieStoreId
   }
-  return { replace, merge }
+  const stores = await browser.cookies.getAllCookieStores()
+  const storeId = stores.find((store) => store.tabIds.includes(tabId))?.id
+  if (!storeId) throw new Error("COOKIE_STORE_UNAVAILABLE")
+  return storeId
+}
+
+function topFrame(tabId: number) {
+  return { tabId, frameId: 0 }
+}
+
+export async function resolveSiteTarget(
+  tabId: number,
+  origin: string
+): Promise<SiteTarget> {
+  const [tab, identity, storeId] = await Promise.all([
+    browser.tabs.get(tabId),
+    sendMessage("site-target", undefined, topFrame(tabId)).catch((cause) => {
+      throw new Error("PAGE_STORAGE_READ_FAILED", { cause })
+    }),
+    storeIdForTab(tabId),
+  ])
+  if (
+    !isSupportedWebUrl(tab.url) ||
+    originFromUrl(tab.url) !== origin ||
+    identity.origin !== origin
+  ) {
+    throw new Error("SITE_TARGET_CHANGED")
+  }
+  return { ...identity, tabId, storeId, url: tab.url }
+}
+
+async function assertCurrentTarget(target: SiteTarget) {
+  const current = await resolveSiteTarget(target.tabId, target.origin)
+  if (
+    current.documentToken !== target.documentToken ||
+    current.storeId !== target.storeId
+  ) {
+    throw new Error("SITE_TARGET_CHANGED")
+  }
+}
+
+function partitionForSite(
+  key: ExportedCookie["partitionKey"],
+  page: URL
+): boolean {
+  if (!key?.topLevelSite || !isSupportedWebUrl(key.topLevelSite)) return false
+  const partition = new URL(key.topLevelSite)
+  return (
+    !partition.username &&
+    !partition.password &&
+    partition.pathname === "/" &&
+    !partition.search &&
+    !partition.hash &&
+    schemefulSite(partition) === schemefulSite(page) &&
+    (!partition.port || partition.port === page.port)
+  )
+}
+
+function isCookieInSite(
+  cookie: ExportedCookie,
+  host: string,
+  page: URL
+): boolean {
+  if (cookie.partitionKey) return partitionForSite(cookie.partitionKey, page)
+  return siteHost(host) === siteHost(page.hostname)
+}
+
+function hasInvalidCookiePath(path: string): boolean {
+  for (const character of path) {
+    const code = character.codePointAt(0) ?? 0
+    if (code < 0x20 || code === 0x7f || character === ";") return true
+  }
+  return false
+}
+
+export function assertCookiesForSite(
+  url: string,
+  cookies: readonly ExportedCookie[]
+) {
+  const page = new URL(url)
+  for (const cookie of cookies) {
+    const host = cookieHost(cookie.domain)
+    if (
+      !isCookieInSite(cookie, host, page) ||
+      !cookie.path.startsWith("/") ||
+      (!import.meta.env.FIREFOX &&
+        !cookie.secure &&
+        (cookie.partitionKey != null ||
+          cookie.sameSite === "no_restriction")) ||
+      (!import.meta.env.FIREFOX &&
+        new URL(cookieSetUrl(cookie, url)).pathname !== cookie.path) ||
+      hasInvalidCookiePath(cookie.path) ||
+      (cookie.name.startsWith("__Host-") &&
+        (!cookie.hostOnly || !cookie.secure || cookie.path !== "/")) ||
+      (cookie.name.startsWith("__Secure-") && !cookie.secure)
+    ) {
+      throw new Error("COOKIE_OUTSIDE_SITE_OR_INVALID")
+    }
+  }
 }
 
 export async function getCookiesForUrl(
-  url: string,
-  tabId?: number
+  target: SiteTarget
 ): Promise<ExportedCookie[]> {
-  const u = new URL(url)
-  const origin = u.origin
-  const hostname = u.hostname
-  const domain = bestEffortRegistrableDomain(hostname)
-
-  const stores =
-    tabId != null ? await browser.cookies.getAllCookieStores() : undefined
-  const storeId =
-    tabId != null
-      ? stores?.find((s) => s.tabIds.includes(tabId))?.id
-      : undefined
-
-  const base = {
-    url,
-    storeId,
+  const page = new URL(target.url)
+  const domain = siteHost(page.hostname)
+  const { storeId } = target
+  const partitionSites = [schemefulSite(page)]
+  if (import.meta.env.FIREFOX && domain === page.hostname && page.port) {
+    partitionSites.push(`${partitionSites[0]}:${page.port}`)
   }
-
-  const dedupe = new Map<string, BrowserCookie>()
-  const add = (list: BrowserCookie[]) => {
-    for (const c of list) dedupe.set(cookieRowId(serializeCookie(c)), c)
-  }
-
-  // 1) Current host cookies (includes Domain cookies that scope to this host).
-  add(await browser.cookies.getAll(base))
-
-  // 2) Subdomain host-only cookies (domain filter includes subdomains).
-  if (domain && domain !== hostname) {
-    add(await browser.cookies.getAll({ domain, storeId }))
-  }
-
-  // 3) Partitioned/cross-site (3rd-party) cookies when available.
-  const partitionKey = {
-    topLevelSite: origin,
-    hasCrossSiteAncestor: true,
-  }
-  add(
-    await browser.cookies.getAll({
-      ...base,
-      partitionKey,
-    })
-  )
-  if (domain && domain !== hostname) {
-    add(
-      await browser.cookies.getAll({
-        domain,
+  const queries = partitionSites.flatMap((topLevelSite) =>
+    [true, false].map((hasCrossSiteAncestor) =>
+      browser.cookies.getAll({
         storeId,
-        partitionKey,
+        partitionKey: { topLevelSite, hasCrossSiteAncestor },
       })
     )
+  )
+  const batches = await Promise.all([
+    browser.cookies.getAll({ url: target.url, storeId }),
+    browser.cookies.getAll({ domain, storeId }),
+    ...queries,
+  ])
+  await assertCurrentTarget(target)
+  const cookies = new Map<string, ExportedCookie>()
+  for (const batch of batches) {
+    for (const cookie of batch) {
+      if (
+        cookie.storeId === storeId &&
+        isCookieInSite(cookie, cookieHost(cookie.domain), page)
+      ) {
+        cookies.set(cookieId(cookie), cookie)
+      }
+    }
   }
+  return [...cookies.values()]
+}
 
-  return Array.from(dedupe.values()).map((c) => serializeCookie(c))
+/** Uses the cookie's own hostname, including when it belongs to a sibling host. */
+export function cookieSetUrl(cookie: ExportedCookie, pageUrl?: string): string {
+  const scheme =
+    cookie.secure || pageUrl?.startsWith("https:") ? "https" : "http"
+  const url = new URL(`${scheme}://${cookieHost(cookie.domain)}`)
+  url.pathname = cookie.path
+  return url.href
+}
+
+function cookieDetails(target: SiteTarget, cookie: ExportedCookie) {
+  const details: Parameters<typeof browser.cookies.set>[0] = {
+    url: cookieSetUrl(cookie, target.url),
+    name: cookie.name,
+    value: cookie.value,
+    path: cookie.path,
+    secure: cookie.secure,
+    httpOnly: cookie.httpOnly,
+    storeId: target.storeId,
+  }
+  if (!cookie.hostOnly) details.domain = cookieHost(cookie.domain)
+  if (cookie.sameSite !== "unspecified") details.sameSite = cookie.sameSite
+  if (!cookie.session && cookie.expirationDate !== undefined) {
+    details.expirationDate = cookie.expirationDate
+  }
+  if (cookie.partitionKey) {
+    const partition = new URL(cookie.partitionKey.topLevelSite!)
+    details.partitionKey = {
+      topLevelSite: partition.origin,
+      hasCrossSiteAncestor:
+        cookie.partitionKey.hasCrossSiteAncestor ??
+        schemefulSite(new URL(details.url)) !== schemefulSite(partition),
+    }
+  }
+  return details
 }
 
 export async function setCookiesOnTab(
-  tabUrl: string,
-  cookies: ExportedCookie[],
-  concurrency = 8
+  target: SiteTarget,
+  cookies: ExportedCookie[]
 ): Promise<number> {
-  let fail = 0
-  for (let i = 0; i < cookies.length; i += concurrency) {
-    const chunk = cookies.slice(i, i + concurrency)
+  assertCookiesForSite(target.url, cookies)
+  let failed = 0
+  for (let i = 0; i < cookies.length; i += 8) {
+    await assertCurrentTarget(target)
     const results = await Promise.allSettled(
-      chunk.map((c) => setCookieOnTab(tabUrl, c))
+      cookies.slice(i, i + 8).map(async (cookie) => {
+        if (
+          cookie.expirationDate !== undefined &&
+          cookie.expirationDate <= Date.now() / 1000
+        )
+          return
+        const details = cookieDetails(target, cookie)
+        const expected = cookieId({
+          ...cookie,
+          partitionKey: details.partitionKey,
+        })
+        const matches = (stored: BrowserCookie) =>
+          stored.storeId === target.storeId &&
+          cookieId(stored) === expected &&
+          stored.value === cookie.value
+        const result = await browser.cookies.set(details)
+        if (result && matches(result)) return
+        const others = await browser.cookies.getAll({
+          url: details.url,
+          name: details.name,
+          path: details.path,
+          storeId: details.storeId,
+          partitionKey: details.partitionKey,
+        })
+        if (!others.some(matches)) throw new Error("COOKIE_WRITE_FAILED")
+      })
     )
-    for (const result of results) {
-      if (result.status === "rejected") fail++
+    for (const result of results) if (result.status === "rejected") failed++
+  }
+  return failed
+}
+
+export function readPageLocalStorage(target: SiteTarget) {
+  return sendMessage("ls-get", target, topFrame(target.tabId)).catch(
+    (cause) => {
+      throw new Error("PAGE_STORAGE_READ_FAILED", { cause })
     }
-  }
-  return fail
+  )
 }
 
-export async function setCookieOnTab(
-  tabUrl: string,
-  c: ExportedCookie
-): Promise<void> {
-  const details: Parameters<typeof browser.cookies.set>[0] = {
-    url: tabUrl,
-    name: c.name,
-    value: c.value,
-    path: c.path || "/",
-    secure: c.secure,
-    httpOnly: c.httpOnly,
-    storeId: c.storeId,
-  }
-  if (c.sameSite && c.sameSite !== "unspecified") {
-    details.sameSite = c.sameSite
-  }
-  if (!c.session && c.expirationDate != null) {
-    details.expirationDate = c.expirationDate
-  }
-  if (!c.hostOnly && c.domain) {
-    details.domain = c.domain
-  }
-  if (c.partitionKey) {
-    details.partitionKey = c.partitionKey
-  }
-  await browser.cookies.set(details)
+export function writePageLocalStorage(
+  target: SiteTarget,
+  entries: Record<string, string>
+) {
+  return sendMessage("ls-set", { ...target, entries }, topFrame(target.tabId))
 }
 
-function collectLocalStorageFromWindow(
-  ..._args: unknown[]
-): Record<string, string> {
-  const entries: Record<string, string> = {}
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i)
-    if (k) entries[k] = localStorage.getItem(k) ?? ""
-  }
-  return entries
-}
-
-function applyLocalStorageToWindow(entries: Record<string, string>): void {
-  for (const [k, v] of Object.entries(entries)) {
-    localStorage.setItem(k, v)
-  }
-}
-
-function collectSessionStorageFromWindow(
-  ..._args: unknown[]
-): Record<string, string> {
-  const entries: Record<string, string> = {}
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const k = sessionStorage.key(i)
-    if (k) entries[k] = sessionStorage.getItem(k) ?? ""
-  }
-  return entries
-}
-
-function applySessionStorageToWindow(entries: Record<string, string>): void {
-  for (const [k, v] of Object.entries(entries)) {
-    sessionStorage.setItem(k, v)
-  }
-}
-
-function injectApplyLocalStorage(...args: unknown[]): void {
-  const first = args[0]
-  if (!isStringRecord(first)) return
-  applyLocalStorageToWindow(first)
-}
-
-function injectApplySessionStorage(...args: unknown[]): void {
-  const first = args[0]
-  if (!isStringRecord(first)) return
-  applySessionStorageToWindow(first)
-}
-
-/**
- * Runs `func` in the page (MV3 scripting with closure args, or MV2 `tabs.executeScript` + JSON args).
- */
-async function runScriptInTab<T>(
-  tabId: number,
-  func: (...args: unknown[]) => T,
-  args: unknown[] = []
-): Promise<T> {
-  if (typeof browser.scripting?.executeScript === "function") {
-    const injected = await browser.scripting.executeScript({
-      target: { tabId },
-      func: () => func(...args),
-    })
-    const first = injected?.[0]
-    if (!first || !("result" in first)) {
-      throw new Error("INJECT_FAILED")
+export function readPageSessionStorage(target: SiteTarget) {
+  return sendMessage("ss-get", target, topFrame(target.tabId)).catch(
+    (cause) => {
+      throw new Error("PAGE_STORAGE_READ_FAILED", { cause })
     }
-    return first.result as T
-  }
-  if (typeof browser.tabs.executeScript === "function") {
-    const payload = JSON.stringify(args)
-    const code = `(() => { const args = JSON.parse(${JSON.stringify(payload)}); return (${func.toString()}).apply(null, args); })()`
-    const res = await browser.tabs.executeScript(tabId, { code })
-    return res?.[0] as T
-  }
-  throw new Error("NO_SCRIPTING")
+  )
 }
 
-export async function readPageLocalStorage(
-  tabId: number
-): Promise<Record<string, string>> {
-  try {
-    const res = await sendMessage("ls-get", undefined, tabId)
-    if (res?.ok && res.entries) return res.entries
-  } catch {
-    /* fall through to scripting */
-  }
-  return (await runScriptInTab(tabId, collectLocalStorageFromWindow)) ?? {}
-}
-
-export async function writePageLocalStorage(
-  tabId: number,
+export function writePageSessionStorage(
+  target: SiteTarget,
   entries: Record<string, string>
-): Promise<void> {
-  try {
-    const res = await sendMessage("ls-set", { entries }, tabId)
-    if (res?.ok) return
-  } catch {
-    /* fall through to scripting */
-  }
-  await runScriptInTab(tabId, injectApplyLocalStorage, [entries])
+) {
+  return sendMessage("ss-set", { ...target, entries }, topFrame(target.tabId))
 }
 
-export async function readPageSessionStorage(
-  tabId: number
-): Promise<Record<string, string>> {
-  try {
-    const res = await sendMessage("ss-get", undefined, tabId)
-    if (res?.ok && res.entries) return res.entries
-  } catch {
-    /* fall through to scripting */
-  }
-  return (await runScriptInTab(tabId, collectSessionStorageFromWindow)) ?? {}
+export function readPageIndexedDB(target: SiteTarget, scope?: IndexedDBScope) {
+  return sendMessage(
+    "idb-dump",
+    { ...target, scope },
+    topFrame(target.tabId)
+  ).catch((cause) => {
+    throw new Error("PAGE_IDB_READ_FAILED", { cause })
+  })
 }
 
-export async function writePageSessionStorage(
-  tabId: number,
-  entries: Record<string, string>
-): Promise<void> {
-  try {
-    const res = await sendMessage("ss-set", { entries }, tabId)
-    if (res?.ok) return
-  } catch {
-    /* fall through to scripting */
-  }
-  await runScriptInTab(tabId, injectApplySessionStorage, [entries])
+export function clearPageIndexedDBOnTab(
+  target: SiteTarget,
+  scope: IndexedDBScope
+) {
+  return sendMessage("idb-clear", { ...target, scope }, topFrame(target.tabId))
 }
 
-export async function readPageIndexedDB(
-  tabId: number
-): Promise<IndexedDBExport> {
-  const res = await sendMessage("idb-dump", undefined, tabId)
-  if (!res?.ok) {
-    throw new Error(
-      (res && "error" in res ? res.error : undefined) ?? "IDB_DUMP_FAILED"
+export function applyPageIndexedDBOnTab(
+  target: SiteTarget,
+  snapshot: IndexedDBExport,
+  replace: boolean,
+  expected: IndexedDBScope
+) {
+  return sendMessage(
+    "idb-apply",
+    { ...target, snapshot, replace, expected },
+    topFrame(target.tabId)
+  )
+}
+
+export async function clearSiteState(
+  target: SiteTarget,
+  captured: readonly ExportedCookie[]
+): Promise<number> {
+  assertCookiesForSite(target.url, captured)
+  for (let i = 0; i < captured.length; i += 8) {
+    await assertCurrentTarget(target)
+    await Promise.allSettled(
+      captured.slice(i, i + 8).map((cookie) =>
+        browser.cookies.set({
+          ...cookieDetails(target, cookie),
+          value: "",
+          // Expire the exact domain, path and partition. `remove` takes only
+          // a URL and name, so it can select a different cookie at that URL.
+          expirationDate: 1,
+        })
+      )
     )
   }
-  return res.data ?? {}
-}
-
-export async function applyPageIndexedDBOnTab(
-  tabId: number,
-  snapshot: IndexedDBExport
-): Promise<void> {
-  const res = await sendMessage("idb-apply", { snapshot }, tabId)
-  if (!res?.ok) {
-    throw new Error(res?.error ?? "IDB_APPLY_FAILED")
-  }
-}
-
-export async function mergePageIndexedDBOnTab(
-  tabId: number,
-  snapshot: IndexedDBExport
-): Promise<void> {
-  const res = await sendMessage("idb-merge", { snapshot }, tabId)
-  if (!res?.ok) {
-    throw new Error(res?.error ?? "IDB_MERGE_FAILED")
-  }
+  // Leave new cookie identities alone; only verify those in the backup.
+  const remaining = new Set((await getCookiesForUrl(target)).map(cookieId))
+  await sendMessage("site-storage-clear", target, topFrame(target.tabId))
+  return captured.filter((cookie) => remaining.has(cookieId(cookie))).length
 }

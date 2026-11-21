@@ -1,112 +1,83 @@
 import {
   applyPageIndexedDB,
+  clearPageIndexedDB,
   dumpPageIndexedDB,
-  mergePageIndexedDBRecords,
 } from "@/lib/indexeddb"
-import { onMessage } from "@/lib/messaging"
+import { onMessage, type PageIdentity } from "@/lib/messaging"
+
+function readStorage(storage: Storage): Record<string, string> {
+  const entries: Record<string, string> = Object.create(null)
+  for (let i = 0; i < storage.length; i++) {
+    const key = storage.key(i)
+    if (key === null) continue
+    const value = storage.getItem(key)
+    if (value !== null) entries[key] = value
+  }
+  return entries
+}
+
+function writeStorage(storage: Storage, entries: Record<string, string>) {
+  for (const [key, value] of Object.entries(entries))
+    storage.setItem(key, value)
+}
 
 export default defineContentScript({
   matches: ["<all_urls>"],
   runAt: "document_idle",
   main(ctx) {
-    onMessage("ls-get", () => {
-      try {
-        const entries: Record<string, string> = {}
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i)
-          if (k) entries[k] = localStorage.getItem(k) ?? ""
-        }
-        return { ok: true as const, entries }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
+    const documentToken = crypto.getRandomValues(new Uint32Array(4)).join("-")
+    function requireTarget(target: PageIdentity) {
+      if (
+        target.documentToken !== documentToken ||
+        target.origin !== location.origin
+      ) {
+        throw new Error("SITE_TARGET_CHANGED")
       }
-    })
+    }
 
-    onMessage("ls-set", ({ data }) => {
-      try {
-        for (const [k, v] of Object.entries(data.entries)) {
-          localStorage.setItem(k, v)
-        }
-        return { ok: true as const }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
-      }
-    })
-
-    onMessage("ss-get", () => {
-      try {
-        const entries: Record<string, string> = {}
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const k = sessionStorage.key(i)
-          if (k) entries[k] = sessionStorage.getItem(k) ?? ""
-        }
-        return { ok: true as const, entries }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
-      }
-    })
-
-    onMessage("ss-set", ({ data }) => {
-      try {
-        for (const [k, v] of Object.entries(data.entries)) {
-          sessionStorage.setItem(k, v)
-        }
-        return { ok: true as const }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
-      }
-    })
-
-    onMessage("idb-dump", async () => {
-      try {
-        const data = await dumpPageIndexedDB()
-        return { ok: true as const, data }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
-      }
-    })
-
-    onMessage("idb-apply", async ({ data }) => {
-      try {
-        await applyPageIndexedDB(data.snapshot)
-        return { ok: true as const }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
-      }
-    })
-
-    onMessage("idb-merge", async ({ data }) => {
-      try {
-        await mergePageIndexedDBRecords(data.snapshot)
-        return { ok: true as const }
-      } catch (e) {
-        return {
-          ok: false as const,
-          error: e instanceof Error ? e.message : String(e),
-        }
-      }
-    })
-
+    const off = [
+      onMessage("site-target", () => ({
+        origin: location.origin,
+        documentToken,
+      })),
+      onMessage("ls-get", ({ data }) => {
+        requireTarget(data)
+        return readStorage(localStorage)
+      }),
+      onMessage("ss-get", ({ data }) => {
+        requireTarget(data)
+        return readStorage(sessionStorage)
+      }),
+      onMessage("ls-set", ({ data }) => {
+        requireTarget(data)
+        writeStorage(localStorage, data.entries)
+      }),
+      onMessage("ss-set", ({ data }) => {
+        requireTarget(data)
+        writeStorage(sessionStorage, data.entries)
+      }),
+      onMessage("site-storage-clear", ({ data }) => {
+        requireTarget(data)
+        const local = localStorage
+        const session = sessionStorage
+        local.clear()
+        session.clear()
+      }),
+      onMessage("idb-dump", ({ data }) => {
+        requireTarget(data)
+        return dumpPageIndexedDB(data.scope)
+      }),
+      onMessage("idb-clear", ({ data }) => {
+        requireTarget(data)
+        return clearPageIndexedDB(data.scope)
+      }),
+      onMessage("idb-apply", ({ data }) => {
+        requireTarget(data)
+        return applyPageIndexedDB(data.snapshot, data.replace, data.expected)
+      }),
+    ]
     ctx.onInvalidated(() => {
-      // Extension was updated -- listeners auto-cleaned up by @webext-core/messaging
+      for (const unsubscribe of off) unsubscribe()
     })
   },
 })

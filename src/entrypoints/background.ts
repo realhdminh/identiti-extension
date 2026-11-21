@@ -1,52 +1,41 @@
-import { storage } from "wxt/utils/storage"
 import { debounce } from "@/lib/debounce"
 import { isSupportedWebUrl, originFromUrl } from "@/lib/page-credentials"
 import { countProfilesForOrigin, watchProfileIndex } from "@/lib/profiles"
-import {
-  applyUiMode,
-  syncUiModeFromStorage,
-  uiMode,
-} from "@/lib/ui-preferences"
 
 /** Matches popup `--primary` (dark zinc) for toolbar badge contrast. */
 const ACTION_BADGE_BG = "#353539"
 
 export default defineBackground(() => {
-  void syncUiModeFromStorage()
-  uiMode.watch((mode) => {
-    void applyUiMode(mode)
-  })
+  const action =
+    import.meta.env.MANIFEST_VERSION === 2
+      ? browser.browserAction
+      : browser.action
 
-  browser.runtime.onInstalled.addListener((details) => {
-    if (details.reason === "install" || details.reason === "update") {
-      void syncUiModeFromStorage()
+  const createContextMenu = async () => {
+    try {
+      await browser.contextMenus?.removeAll?.()
+    } catch {
+      /* ignore */
+    }
+    try {
       browser.contextMenus?.create({
         id: "identiti-save-profile",
         title: browser.i18n.getMessage("ctxMenuSaveProfile"),
         contexts: ["page"],
       })
+    } catch {
+      /* ignore duplicate */
+    }
+  }
+
+  browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason === "install" || details.reason === "update") {
+      void createContextMenu()
     }
   })
 
-  browser.commands?.onCommand.addListener((command) => {
-    if (command === "open-import") {
-      void storage.setItem("session:openTab", "import")
-    }
-    void (async () => {
-      const mode = await uiMode.getValue()
-      if (mode === "sidebar" && typeof browser.sidePanel?.open === "function") {
-        const win = await browser.windows.getLastFocused()
-        if (win?.id != null) {
-          await browser.sidePanel.open({ windowId: win.id })
-          return
-        }
-      }
-      try {
-        await browser.action.openPopup()
-      } catch {
-        // openPopup may not be available in all browsers
-      }
-    })()
+  browser.runtime.onStartup?.addListener(() => {
+    void createContextMenu()
   })
 
   browser.contextMenus?.onClicked.addListener(async (info, tab) => {
@@ -54,7 +43,9 @@ export default defineBackground(() => {
     if (!tab?.id || !tab.url || !isSupportedWebUrl(tab.url)) return
 
     try {
-      await browser.action.openPopup()
+      if ("openPopup" in action && typeof action.openPopup === "function") {
+        await action.openPopup()
+      }
     } catch {
       // openPopup may not be available in all browsers
     }
@@ -65,22 +56,22 @@ export default defineBackground(() => {
     url: string | undefined
   ): Promise<void> {
     if (!url || !isSupportedWebUrl(url)) {
-      await browser.action.setBadgeText({ text: "", tabId })
+      await action.setBadgeText({ text: "", tabId })
       return
     }
     try {
       const origin = originFromUrl(url)
       const count = await countProfilesForOrigin(origin)
-      await browser.action.setBadgeText({
+      await action.setBadgeText({
         text: count > 0 ? String(count) : "",
         tabId,
       })
-      await browser.action.setBadgeBackgroundColor({
+      await action.setBadgeBackgroundColor({
         color: ACTION_BADGE_BG,
         tabId,
       })
     } catch {
-      await browser.action.setBadgeText({ text: "", tabId })
+      await action.setBadgeText({ text: "", tabId })
     }
   }
 

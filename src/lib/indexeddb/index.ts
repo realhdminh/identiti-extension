@@ -1,8 +1,12 @@
-export { applyPageIndexedDB, mergePageIndexedDBRecords } from "./apply"
 export {
-  filterIndexedDBExport,
-  flattenIdbForUi,
-  idbRecordId,
-} from "./codec"
+  applyPageIndexedDB,
+  clearPageIndexedDB,
+  splitStoresByLiveSchema,
+} from "./apply"
 export { dumpPageIndexedDB } from "./dump"
-export type { IndexedDBExport } from "./types"
+export type {
+  IndexedDBApplyResult,
+  IndexedDBExport,
+  IndexedDBScope,
+  IndexedDBStoreDump,
+} from "./types"

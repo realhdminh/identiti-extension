@@ -1,16 +1,11 @@
 import { useEffect } from "react"
 import { Toaster } from "@/components/ui/sonner"
 import { CredentialManager } from "@/popup/CredentialManager"
+import { ErrorBoundary } from "@/popup/components/ErrorBoundary"
 
-export type AppLayout = "popup" | "sidepanel"
-
-export type AppShellProps = {
-  layout?: AppLayout
-}
-
-export default function AppShell({ layout = "popup" }: AppShellProps) {
+export default function AppShell() {
   useEffect(() => {
-    const lang = browser.i18n.getUILanguage() || "en"
+    const lang = browser.i18n.getUILanguage()
     document.documentElement.lang = lang
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)")
@@ -24,8 +19,19 @@ export default function AppShell({ layout = "popup" }: AppShellProps) {
 
   return (
     <>
-      <CredentialManager layout={layout} />
-      <Toaster theme="system" richColors closeButton position="top-center" />
+      <ErrorBoundary>
+        <CredentialManager />
+      </ErrorBoundary>
+      <Toaster
+        theme="system"
+        richColors
+        closeButton
+        toastOptions={{
+          closeButtonAriaLabel: browser.i18n.getMessage("close"),
+        }}
+        containerAriaLabel={browser.i18n.getMessage("notifications")}
+        position="top-center"
+      />
     </>
   )
 }

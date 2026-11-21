@@ -3,7 +3,7 @@
     "message": "Identiti — dữ liệu đăng nhập trang"
   },
   "extensionDescription": {
-    "message": "Xuất/nhập cookie, local & session storage, IndexedDB, tùy chọn mã hóa AES bằng mật khẩu. Chrome & Firefox."
+    "message": "Lưu và khôi phục đăng nhập trên máy này, hoặc chuyển sang máy khác bằng tệp sao lưu có thể đặt mật khẩu."
   },
   "actionTitle": {
     "message": "Identiti — xuất / nhập dữ liệu trang"
@@ -11,56 +11,17 @@
   "heading": {
     "message": "Identiti"
   },
-  "tabExport": {
-    "message": "Xuất"
-  },
-  "tabImport": {
-    "message": "Nhập"
-  },
   "currentSite": {
-    "message": "Tab đang mở: $1"
+    "message": "Trang hiện tại: $1"
   },
   "restrictedPage": {
-    "message": "Không truy cập được trang này (ví dụ trang nội bộ trình duyệt). Hãy mở tab http(s) thông thường."
+    "message": "Identiti không dùng được trang này. Hãy mở trang web bạn muốn lưu hoặc khôi phục."
   },
   "noTab": {
     "message": "Không tìm thấy tab đang hoạt động."
   },
   "loadError": {
-    "message": "Không tải được dữ liệu: $1"
-  },
-  "sectionCookies": {
-    "message": "Cookie"
-  },
-  "sectionLocalStorage": {
-    "message": "Local storage"
-  },
-  "sectionSessionStorage": {
-    "message": "Session storage"
-  },
-  "sectionIndexedDB": {
-    "message": "IndexedDB"
-  },
-  "selectAll": {
-    "message": "Tất cả"
-  },
-  "selectNone": {
-    "message": "Bỏ chọn"
-  },
-  "searchPlaceholder": {
-    "message": "Lọc theo tên…"
-  },
-  "countSummaryFull": {
-    "message": "$1 cookie · $2 local · $3 session · $4 dòng IDB"
-  },
-  "countItems": {
-    "message": "$1 mục"
-  },
-  "viewDetails": {
-    "message": "Xem chi tiết"
-  },
-  "exportButton": {
-    "message": "Tải JSON"
+    "message": "Identiti không hoàn tất được. Hãy thử lại. Nếu đang đổi tài khoản, hãy tìm nút Hoàn tác lần khôi phục trước."
   },
   "encrypting": {
     "message": "Đang mã hóa…"
@@ -69,43 +30,34 @@
     "message": "Đang giải mã…"
   },
   "exportNothingSelected": {
-    "message": "Chọn ít nhất một mục để xuất."
+    "message": "Không có gì để xuất từ trang này."
   },
   "exportDone": {
     "message": "Đã xuất — kiểm tra thư mục tải xuống."
   },
-  "importPickFile": {
-    "message": "Chọn file sao lưu"
-  },
   "importParseError": {
     "message": "File không hợp lệ. Dùng file JSON do extension này xuất."
   },
-  "importApply": {
-    "message": "Áp dụng vào tab này"
-  },
   "importNothingSelected": {
-    "message": "Chọn mục cần nhập."
+    "message": "Bản sao lưu này không có gì để nhập."
   },
   "importDone": {
     "message": "Đã nhập xong. Tải lại trang nếu site chưa nhận thay đổi."
   },
   "importPartialFail": {
-    "message": "Một số mục không áp dụng được. Thử tải lại tab."
-  },
-  "originMismatchTitle": {
-    "message": "Khác trang"
-  },
-  "originMismatchBody": {
-    "message": "File sao lưu cho $1 nhưng tab hiện tại là $2. Nhập có thể không đúng ý."
+    "message": "Không nhập được một phần dữ liệu. Dùng Hoàn tác khôi phục gần nhất để hoàn nguyên các thay đổi."
   },
   "originUnknown": {
     "message": "Trang không xác định"
   },
   "confirmImportTitle": {
-    "message": "Ghi đè dữ liệu?"
+    "message": "Nhập dữ liệu trang?"
   },
   "confirmImportBody": {
-    "message": "Cookie, khóa storage và bản ghi IndexedDB đã chọn sẽ được tạo hoặc thay thế cho trang này."
+    "message": "Thao tác này sẽ thay phiên đăng nhập trên trang hiện tại bằng phiên trong tệp. Identiti sao lưu phiên hiện tại trước để bạn có thể hoàn tác."
+  },
+  "confirmLegacyImportBody": {
+    "message": "Bản sao lưu cũ này chỉ cập nhật dữ liệu có trong tệp. Identiti sao lưu phiên hiện tại trước để bạn có thể hoàn tác."
   },
   "cancel": {
     "message": "Hủy"
@@ -113,35 +65,8 @@
   "continue": {
     "message": "Tiếp tục"
   },
-  "privacyNote": {
-    "message": "File xuất chứa thông tin nhạy cảm. Giữ an toàn."
-  },
-  "idbBlobNote": {
-    "message": "Blob được đọc thêm ở bước sau nếu được; blob quá lớn hoặc không đọc được có thể bị bỏ qua."
-  },
-  "emptyCookies": {
-    "message": "Không có cookie cho URL này."
-  },
-  "emptyLocalStorage": {
-    "message": "Không có khóa trong local storage."
-  },
-  "emptySessionStorage": {
-    "message": "Không có khóa trong session storage."
-  },
-  "emptyIndexedDB": {
-    "message": "Không có IndexedDB cho origin này."
-  },
   "loading": {
     "message": "Đang tải…"
-  },
-  "cookieLabel": {
-    "message": "$1 · $2"
-  },
-  "reloadSuggestion": {
-    "message": "Gợi ý: tải lại trang sau khi nhập."
-  },
-  "encryptFile": {
-    "message": "Mã hóa file bằng mật khẩu (AES-GCM)"
   },
   "exportPassword": {
     "message": "Mật khẩu"
@@ -156,31 +81,19 @@
     "message": "File đã mã hóa. Nhập mật khẩu bên dưới."
   },
   "encryptedFileHelp": {
-    "message": "PBKDF2 + AES-GCM (cùng cài đặt khi xuất). Sai mật khẩu sẽ không giải mã được."
+    "message": "Nhập mật khẩu bạn đã đặt khi tạo bản sao lưu."
   },
   "importPassword": {
     "message": "Mật khẩu giải mã"
   },
   "decryptImport": {
-    "message": "Giải mã và xem trước"
+    "message": "Mở khóa bản sao lưu"
   },
   "decryptFailed": {
     "message": "Không giải mã được. Kiểm tra mật khẩu."
   },
-  "tabProfiles": {
-    "message": "Hồ sơ"
-  },
   "profilesEmpty": {
     "message": "Chưa có hồ sơ nào cho trang này."
-  },
-  "profilesEmptyHint": {
-    "message": "Lưu thông tin đăng nhập hiện tại thành hồ sơ để khôi phục nhanh sau này."
-  },
-  "profileSaveCurrent": {
-    "message": "Lưu thành hồ sơ"
-  },
-  "profileSaveAsProfile": {
-    "message": "Lưu hồ sơ"
   },
   "profileNamePlaceholder": {
     "message": "Tên hồ sơ"
@@ -188,41 +101,17 @@
   "profileSaved": {
     "message": "Đã lưu hồ sơ."
   },
-  "profileRestore": {
-    "message": "Khôi phục"
-  },
   "profileRestored": {
     "message": "Đã khôi phục hồ sơ. Tải lại trang nếu site chưa nhận thay đổi."
   },
   "profileRestorePartialFail": {
-    "message": "Một số mục không khôi phục được. Thử tải lại tab."
+    "message": "Không khôi phục được một phần dữ liệu. Bạn có thể dùng Hoàn tác khôi phục gần nhất để khôi phục bản sao an toàn."
   },
   "profileDelete": {
     "message": "Xóa"
   },
-  "profileDeleted": {
-    "message": "Đã xóa hồ sơ."
-  },
-  "profileRename": {
-    "message": "Đổi tên"
-  },
   "profileRenamed": {
     "message": "Đã đổi tên hồ sơ."
-  },
-  "profileConfirmDeleteTitle": {
-    "message": "Xóa hồ sơ?"
-  },
-  "profileConfirmDeleteBody": {
-    "message": "Hành động này sẽ xóa vĩnh viễn hồ sơ \"$1\"."
-  },
-  "profileConfirmRestoreTitle": {
-    "message": "Khôi phục hồ sơ?"
-  },
-  "profileConfirmRestoreBody": {
-    "message": "Cookie, khóa storage và dữ liệu IndexedDB từ hồ sơ này sẽ được áp dụng vào tab hiện tại."
-  },
-  "profileItemCounts": {
-    "message": "$1 cookie · $2 local · $3 session · $4 IDB"
   },
   "profileSavedAt": {
     "message": "Lưu $1"
@@ -230,17 +119,11 @@
   "ctxMenuSaveProfile": {
     "message": "Lưu thông tin đăng nhập (Identiti)"
   },
-  "profileNameRequired": {
-    "message": "Nhập tên cho hồ sơ."
-  },
-  "copyJson": {
-    "message": "Sao chép JSON"
-  },
   "copySuccess": {
     "message": "Đã sao chép JSON"
   },
   "cmdOpenImport": {
-    "message": "Mở tab nhập Identiti"
+    "message": "Mở Identiti"
   },
   "exportAllProfiles": {
     "message": "Xuất tất cả hồ sơ"
@@ -248,63 +131,14 @@
   "exportAllProfilesDone": {
     "message": "Đã xuất tất cả hồ sơ."
   },
-  "profileMovedToTrash": {
-    "message": "Đã chuyển hồ sơ vào thùng rác."
+  "profilesPlaintextWarning": {
+    "message": "Hồ sơ xuất ra không được mã hóa và chứa dữ liệu đăng nhập. Hãy lưu tệp ở nơi an toàn và không chia sẻ."
   },
-  "profileRestoredFromTrash": {
-    "message": "Đã khôi phục hồ sơ từ thùng rác."
-  },
-  "profilePermanentlyDeleted": {
-    "message": "Đã xóa hồ sơ vĩnh viễn."
-  },
-  "profileConfirmTrashBody": {
-    "message": "Chuyển \"$1\" vào thùng rác? Bạn có thể khôi phục sau."
-  },
-  "trashSectionTitle": {
-    "message": "Thùng rác"
-  },
-  "trashRestore": {
-    "message": "Khôi phục"
-  },
-  "trashDeleteForever": {
-    "message": "Xóa vĩnh viễn"
-  },
-  "trashDeleteForeverTitle": {
-    "message": "Xóa vĩnh viễn?"
-  },
-  "trashDeleteForeverBody": {
-    "message": "Xóa vĩnh viễn \"$1\"? Không thể hoàn tác."
-  },
-  "passwordStrengthWeak": {
-    "message": "Mật khẩu yếu — dùng ít nhất 8 ký tự."
-  },
-  "passwordStrengthFair": {
-    "message": "Mật khẩu khá — thêm số hoặc ký tự đặc biệt để an toàn hơn."
-  },
-  "passwordStrengthStrong": {
-    "message": "Mật khẩu mạnh."
-  },
-  "importProgress": {
-    "message": "Đang áp dụng bước $1 / $2…"
-  },
-  "uiModeUseSidebar": {
-    "message": "Chế độ sidebar"
-  },
-  "uiModeUsePopup": {
-    "message": "Chế độ popup"
-  },
-  "uiModeSwitchedSidebar": {
-    "message": "Đã bật sidebar. Bấm icon trên thanh công cụ để mở side panel."
-  },
-  "uiModeSwitchedPopup": {
-    "message": "Đã bật popup. Bấm icon trên thanh công cụ để mở popup."
-  },
-
   "welcomeTitle": {
     "message": "Chào mừng đến Identiti"
   },
   "welcomeBody": {
-    "message": "Lưu đăng nhập của một trang để khôi phục tức thì — trên máy này hoặc copy sang máy khác. Không có gì rời khỏi thiết bị của bạn. Không tài khoản, không cloud."
+    "message": "Lưu phiên đăng nhập để đổi tài khoản sau này hoặc chuyển sang máy khác. Identiti không tải dữ liệu của bạn lên mạng."
   },
   "welcomeSave": {
     "message": "Lưu trang tôi đang mở"
@@ -312,32 +146,15 @@
   "welcomeTransfer": {
     "message": "Chuyển đăng nhập sang máy khác"
   },
-  "welcomeDismiss": {
-    "message": "Đã hiểu"
-  },
-
   "dashboardTitle": {
     "message": "Đăng nhập đã lưu"
-  },
-  "dashboardSavedEmpty": {
-    "message": "Chưa có đăng nhập nào được lưu."
-  },
-  "dashboardSavedEmptyHint": {
-    "message": "Mở trang bạn muốn giữ, rồi bấm “Lưu trang này” bên dưới."
   },
   "saveCurrentLabel": {
     "message": "Lưu trang này"
   },
   "saveCurrentHint": {
-    "message": "Ghi lại toàn bộ đăng nhập cho $1 để khôi phục bất cứ lúc nào."
+    "message": "Lưu phiên đăng nhập hiện tại của $1. Một số trang có thể yêu cầu đăng nhập lại sau này."
   },
-  "restore": {
-    "message": "Khôi phục"
-  },
-  "trash": {
-    "message": "Vào thùng rác"
-  },
-
   "transferOpen": {
     "message": "Chuyển sang máy khác"
   },
@@ -345,33 +162,32 @@
     "message": "Chuyển đăng nhập sang máy khác"
   },
   "transferIntro": {
-    "message": "Xuất sẽ tạo một file chỉ trên máy này. Tự copy sang máy kia (USB, email gửi chính mình…), rồi mở Identiti ở đó và chọn “Khôi phục từ file”."
+    "message": "Tạo tệp sao lưu tại đây. Trên máy kia, mở cùng một trang web rồi chọn “Khôi phục từ tệp” trong Identiti."
   },
   "transferExportFile": {
-    "message": "Tạo file sao lưu"
+    "message": "Tạo tệp sao lưu"
   },
   "transferImportFile": {
-    "message": "Khôi phục từ file"
+    "message": "Khôi phục từ tệp"
   },
   "transferProtectPass": {
-    "message": "Bảo vệ file bằng mật khẩu"
+    "message": "Bảo vệ tệp bằng mật khẩu"
   },
   "transferProtectHelp": {
-    "message": "Ai có file cũng dùng được đăng nhập của bạn, trừ khi bạn đặt mật khẩu."
+    "message": "Cất mật khẩu ở nơi an toàn. Bạn sẽ cần mật khẩu để mở bản sao lưu."
   },
   "transferPickFile": {
-    "message": "Chọn file sao lưu"
+    "message": "Chọn tệp sao lưu"
   },
   "transferWrongSiteTitle": {
     "message": "Khác trang"
   },
   "transferWrongSiteBody": {
-    "message": "Bản sao này dành cho $1, còn bạn đang ở $2. Bạn vẫn có thể khôi phục."
+    "message": "Bản sao này dành cho $1, nhưng bạn đang ở $2. Hãy mở đúng trang để khôi phục."
   },
   "transferApply": {
     "message": "Khôi phục vào trang này"
   },
-
   "advancedOpen": {
     "message": "Nâng cao"
   },
@@ -390,8 +206,187 @@
   "advancedReloadHint": {
     "message": "Sau khi khôi phục, tải lại trang nếu site chưa cập nhật."
   },
-
   "localFirstBadge": {
     "message": "Trên máy bạn · không tải lên đâu"
+  },
+  "storageReadWarning": {
+    "message": "Không đọc được bộ nhớ của trang. Hãy tải lại tab, chờ trang tải xong rồi thử lại."
+  },
+  "idbReadFailed": {
+    "message": "Không đọc được dữ liệu mà trang đã lưu trong trình duyệt. Hãy tải lại trang rồi thử lại."
+  },
+  "profilesBundleImported": {
+    "message": "Đã nhập $1 profile; bỏ qua $2 không hợp lệ."
+  },
+  "transferExportIncludesIdb": {
+    "message": "Tệp chứa dữ liệu đăng nhập mà trang này lưu trong trình duyệt."
+  },
+  "undoLastRestore": {
+    "message": "Hoàn tác lần khôi phục trước"
+  },
+  "reloadTabNow": {
+    "message": "Tải lại tab"
+  },
+  "environmentMismatch": {
+    "message": "Phiên đăng nhập này được lưu từ trình duyệt hoặc máy khác. Trang có thể yêu cầu bạn đăng nhập lại."
+  },
+  "activeBadge": {
+    "message": "Đang dùng"
+  },
+  "switchAccount": {
+    "message": "Chuyển"
+  },
+  "searchAccountsPlaceholder": {
+    "message": "Tìm kiếm tài khoản…"
+  },
+  "rename": {
+    "message": "Đổi tên"
+  },
+  "renameTitle": {
+    "message": "Đổi tên tài khoản"
+  },
+  "renameDescription": {
+    "message": "Nhập tên mới cho tài khoản này."
+  },
+  "renameSave": {
+    "message": "Lưu tên"
+  },
+  "prepareNewLogin": {
+    "message": "Đăng nhập tài khoản khác"
+  },
+  "prepareNewLoginHint": {
+    "message": "Sao lưu rồi xóa dữ liệu đăng nhập hiện tại trên trang này."
+  },
+  "prepareNewLoginSuccess": {
+    "message": "Trang đã sẵn sàng! Hãy đăng nhập tài khoản mới, sau đó mở Identiti để lưu lại."
+  },
+  "prepareNewLoginPartial": {
+    "message": "Trang có thể vẫn đang đăng nhập. Sau khi tải lại, hãy đăng xuất trên trang nếu cần hoặc dùng Hoàn tác lần khôi phục trước."
+  },
+  "autoBackupReassurance": {
+    "message": "Tài khoản hiện tại luôn được tự động sao lưu trước khi chuyển đổi."
+  },
+  "welcomeFeatSwitch": {
+    "message": "Chuyển đổi 1 chạm qua lại giữa các tài khoản trên trang này"
+  },
+  "welcomeFeatCheckpoint": {
+    "message": "Lưu dữ liệu đăng nhập mà trang web giữ trong trình duyệt"
+  },
+  "welcomeFeatTransfer": {
+    "message": "Chuyển phiên đăng nhập đã lưu sang trình duyệt hoặc máy khác"
+  },
+  "noAccountsFound": {
+    "message": "Không tìm thấy tài khoản phù hợp."
+  },
+  "expandSaveAccount": {
+    "message": "Lưu phiên này thành tài khoản mới"
+  },
+  "reapply": {
+    "message": "Áp dụng vào tab này"
+  },
+  "reapplyHint": {
+    "message": "Áp dụng phiên đăng nhập này vào tab hoặc container hiện tại"
+  },
+  "otherSitesAccounts": {
+    "message": "Tài khoản từ trang khác"
+  },
+  "viewOtherSitesAccounts": {
+    "message": "Xem tài khoản từ trang khác"
+  },
+  "hideOtherSitesAccounts": {
+    "message": "Ẩn tài khoản từ trang khác"
+  },
+  "deleteAll": {
+    "message": "Xóa tất cả"
+  },
+  "deleteAllOtherSites": {
+    "message": "Xóa tất cả tài khoản từ các trang khác"
+  },
+  "deleteAllOtherSitesConfirm": {
+    "message": "Chuyển toàn bộ $1 tài khoản từ các trang khác vào thùng rác? Bạn có thể khôi phục sau."
+  },
+  "profilesDeletedAll": {
+    "message": "Đã chuyển toàn bộ hồ sơ của các trang khác vào thùng rác."
+  },
+  "backupFailed": {
+    "message": "Không tạo được bản sao lưu an toàn, nên không có gì thay đổi."
+  },
+  "siteOperationBusy": {
+    "message": "Identiti đang xử lý ở cửa sổ khác. Hãy thử lại sau khi thao tác đó hoàn tất."
+  },
+  "profileTrashed": {
+    "message": "Đã chuyển hồ sơ vào thùng rác."
+  },
+  "profileRestoredFromTrash": {
+    "message": "Đã khôi phục hồ sơ từ thùng rác."
+  },
+  "profileDeletedForever": {
+    "message": "Đã xóa vĩnh viễn hồ sơ."
+  },
+  "profileDeleteConfirm": {
+    "message": "Chuyển “$1” vào thùng rác? Bạn có thể khôi phục sau."
+  },
+  "trashSectionTitle": {
+    "message": "Thùng rác"
+  },
+  "trashShow": {
+    "message": "Hiện"
+  },
+  "trashHide": {
+    "message": "Ẩn"
+  },
+  "trashRestore": {
+    "message": "Khôi phục"
+  },
+  "trashDeleteForever": {
+    "message": "Xóa vĩnh viễn"
+  },
+  "trashDeleteForeverTitle": {
+    "message": "Xóa vĩnh viễn?"
+  },
+  "trashDeleteForeverBody": {
+    "message": "Xóa vĩnh viễn “$1”? Bạn không thể hoàn tác thao tác này."
+  },
+  "errorBoundaryTitle": {
+    "message": "Đã xảy ra lỗi."
+  },
+  "errorBoundaryBody": {
+    "message": "Tải lại cửa sổ Identiti và thử lại."
+  },
+  "close": {
+    "message": "Đóng"
+  },
+  "notifications": {
+    "message": "Thông báo từ Identiti"
+  },
+  "backupWebsite": {
+    "message": "Trang web trong bản sao lưu"
+  },
+  "prepareNewLoginConfirm": {
+    "message": "Identiti sẽ sao lưu, xóa dữ liệu đăng nhập hiện tại rồi tải lại trang. Các đăng nhập đã lưu vẫn ở trong Identiti. Bạn có thể hoàn tác ngay từ tab này."
+  },
+  "siteWorking": {
+    "message": "Đang xử lý dữ liệu của trang… Hãy giữ Identiti mở cho đến khi hoàn tất."
+  },
+  "transferPlaintextWarning": {
+    "message": "Người có tệp này có thể dùng phiên đăng nhập của bạn. Hãy đặt mật khẩu nếu định sao chép hoặc chia sẻ tệp."
+  },
+  "siteChanged": {
+    "message": "Trang đã thay đổi. Hãy mở lại Identiti trên trang web bạn muốn sử dụng."
+  },
+  "incompatibleCookies": {
+    "message": "Một phần dữ liệu đăng nhập không tương thích với trang hoặc trình duyệt này. Chưa có dữ liệu nào thay đổi."
+  },
+  "unsupportedSiteData": {
+    "message": "Trang này lưu một số dữ liệu mà Identiti chưa sao lưu được. Chưa có dữ liệu nào thay đổi."
+  },
+  "safetyBackupName": {
+    "message": "Bản sao lưu an toàn"
+  },
+  "undoUnavailable": {
+    "message": "Không còn hoàn tác được ở đây. Có thể đã có thay đổi mới hơn ở tab khác."
+  },
+  "undoSchemaKept": {
+    "message": "Dữ liệu thêm từ bản sao lưu đã được gỡ bỏ. Các cấu trúc rỗng tạo ra khi khôi phục vẫn được giữ lại."
   }
 }

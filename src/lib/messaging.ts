@@ -1,24 +1,30 @@
 import { defineExtensionMessaging } from "@webext-core/messaging"
-import type { IndexedDBExport } from "@/lib/indexeddb"
+import type {
+  IndexedDBApplyResult,
+  IndexedDBExport,
+  IndexedDBScope,
+} from "@/lib/indexeddb"
 
-type StorageResponse =
-  | { ok: true; entries: Record<string, string> }
-  | { ok: false; error: string }
+export type PageIdentity = { origin: string; documentToken: string }
 
-type OkResponse = { ok: true } | { ok: false; error: string }
-
-type IdbDumpResponse =
-  | { ok: true; data: IndexedDBExport }
-  | { ok: false; error: string }
+type StorageEntries = Record<string, string>
 
 interface ProtocolMap {
-  "ls-get"(): StorageResponse
-  "ls-set"(data: { entries: Record<string, string> }): OkResponse
-  "ss-get"(): StorageResponse
-  "ss-set"(data: { entries: Record<string, string> }): OkResponse
-  "idb-dump"(): IdbDumpResponse
-  "idb-apply"(data: { snapshot: IndexedDBExport }): OkResponse
-  "idb-merge"(data: { snapshot: IndexedDBExport }): OkResponse
+  "site-target"(): PageIdentity
+  "ls-get"(data: PageIdentity): StorageEntries
+  "ls-set"(data: PageIdentity & { entries: StorageEntries }): void
+  "ss-get"(data: PageIdentity): StorageEntries
+  "ss-set"(data: PageIdentity & { entries: StorageEntries }): void
+  "site-storage-clear"(data: PageIdentity): void
+  "idb-dump"(data: PageIdentity & { scope?: IndexedDBScope }): IndexedDBExport
+  "idb-clear"(data: PageIdentity & { scope: IndexedDBScope }): number
+  "idb-apply"(
+    data: PageIdentity & {
+      snapshot: IndexedDBExport
+      replace: boolean
+      expected: IndexedDBScope
+    }
+  ): IndexedDBApplyResult
 }
 
 export const { sendMessage, onMessage } =

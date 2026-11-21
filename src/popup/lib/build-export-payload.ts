@@ -1,33 +1,23 @@
-import { filterIndexedDBExport } from "@/lib/indexeddb"
+import type { IndexedDBExport } from "@/lib/indexeddb"
 import {
   type CredentialExportFile,
-  cookieRowId,
   EXPORT_SCHEMA_VERSION,
   type ExportedCookie,
 } from "@/lib/page-credentials"
-import { lsKeyId, ssKeyId } from "@/popup/lib/selection-ids"
 
-export function buildSelectedExportPayload(input: {
+export function buildExportPayload(input: {
   origin: string
-  tabUrl: string
   cookies: ExportedCookie[]
   lsEntries: Record<string, string>
   ssEntries: Record<string, string>
-  idbData: Parameters<typeof filterIndexedDBExport>[0]
-  selected: Set<string>
+  idbData: IndexedDBExport
 }): CredentialExportFile | null {
-  const pickCookies = input.cookies.filter((c) =>
-    input.selected.has(cookieRowId(c))
+  const pickCookies = input.cookies
+  const pickLs: Record<string, string> = { ...input.lsEntries }
+  const pickSs: Record<string, string> = { ...input.ssEntries }
+  const pickIdb = Object.fromEntries(
+    Object.entries(input.idbData).filter(([, db]) => db.stores.length > 0)
   )
-  const pickLs: Record<string, string> = {}
-  for (const k of Object.keys(input.lsEntries)) {
-    if (input.selected.has(lsKeyId(k))) pickLs[k] = input.lsEntries[k]!
-  }
-  const pickSs: Record<string, string> = {}
-  for (const k of Object.keys(input.ssEntries)) {
-    if (input.selected.has(ssKeyId(k))) pickSs[k] = input.ssEntries[k]!
-  }
-  const pickIdb = filterIndexedDBExport(input.idbData, input.selected)
   const anyIdb = Object.keys(pickIdb).length > 0
   if (
     pickCookies.length === 0 &&
@@ -41,7 +31,16 @@ export function buildSelectedExportPayload(input: {
     identitiVersion: EXPORT_SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     origin: input.origin,
-    pageUrl: input.tabUrl,
+    environment:
+      typeof navigator !== "undefined" && typeof window !== "undefined"
+        ? {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            screen: `${window.screen.width}x${window.screen.height}`,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }
+        : undefined,
     cookies: pickCookies,
     localStorage: pickLs,
     sessionStorage: pickSs,

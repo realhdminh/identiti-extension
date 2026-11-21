@@ -3,7 +3,7 @@
     "message": "Identiti — site credentials"
   },
   "extensionDescription": {
-    "message": "Export and import cookies, local & session storage, IndexedDB, with optional AES password protection. Chrome & Firefox."
+    "message": "Save and restore site logins on this device, or move them with a password-protected backup file."
   },
   "actionTitle": {
     "message": "Identiti — export / import site data"
@@ -11,59 +11,17 @@
   "heading": {
     "message": "Identiti"
   },
-  "tabExport": {
-    "message": "Export"
-  },
-  "tabImport": {
-    "message": "Import"
-  },
   "currentSite": {
-    "message": "Active tab: $1"
+    "message": "Current site: $1"
   },
   "restrictedPage": {
-    "message": "This page cannot be accessed (e.g. browser internal pages). Open a normal http(s) tab."
+    "message": "Identiti can’t use this page. Open the website you want to save or restore."
   },
   "noTab": {
     "message": "No active tab found."
   },
   "loadError": {
-    "message": "Could not load data: $1"
-  },
-  "sectionCookies": {
-    "message": "Cookies"
-  },
-  "sectionLocalStorage": {
-    "message": "Local storage"
-  },
-  "sectionSessionStorage": {
-    "message": "Session storage"
-  },
-  "sectionIndexedDB": {
-    "message": "IndexedDB"
-  },
-  "selectAll": {
-    "message": "All"
-  },
-  "selectNone": {
-    "message": "None"
-  },
-  "searchPlaceholder": {
-    "message": "Filter by name…"
-  },
-  "countSummaryFull": {
-    "message": "$1 cookies · $2 local · $3 session · $4 IDB rows"
-  },
-  "countItems": {
-    "message": "$1 items"
-  },
-  "viewDetails": {
-    "message": "View details"
-  },
-  "exportButton": {
-    "message": "Download JSON"
-  },
-  "copyJson": {
-    "message": "Copy JSON"
+    "message": "Identiti couldn’t finish. Try again. If you were changing logins, look for Undo last restore."
   },
   "copySuccess": {
     "message": "JSON copied to clipboard"
@@ -75,43 +33,34 @@
     "message": "Decrypting…"
   },
   "exportNothingSelected": {
-    "message": "Select at least one item to export."
+    "message": "There is nothing to export from this page."
   },
   "exportDone": {
     "message": "Export ready — check your downloads."
   },
-  "importPickFile": {
-    "message": "Choose backup file"
-  },
   "importParseError": {
     "message": "Invalid file. Use a JSON export from this extension."
   },
-  "importApply": {
-    "message": "Apply to this tab"
-  },
   "importNothingSelected": {
-    "message": "Select items to import."
+    "message": "This backup has nothing to import."
   },
   "importDone": {
     "message": "Import finished. Reload the page if the site does not pick up changes."
   },
   "importPartialFail": {
-    "message": "Some items could not be applied. Try reloading the tab."
-  },
-  "originMismatchTitle": {
-    "message": "Different site"
-  },
-  "originMismatchBody": {
-    "message": "Backup is for $1 but this tab is $2. Import may not work as expected."
+    "message": "Some data could not be imported. Use Undo last restore to revert the changes."
   },
   "originUnknown": {
     "message": "Unknown site"
   },
   "confirmImportTitle": {
-    "message": "Overwrite data?"
+    "message": "Import site data?"
   },
   "confirmImportBody": {
-    "message": "Selected cookies, storage keys, and IndexedDB rows will be created or replaced for this site."
+    "message": "This will replace the login on the current site with the one in the file. Identiti saves your current login first so you can undo."
+  },
+  "confirmLegacyImportBody": {
+    "message": "This older backup updates only the data it contains. Identiti saves your current login first so you can undo."
   },
   "cancel": {
     "message": "Cancel"
@@ -119,35 +68,8 @@
   "continue": {
     "message": "Continue"
   },
-  "privacyNote": {
-    "message": "Exports contain sensitive site data. Store files safely."
-  },
-  "idbBlobNote": {
-    "message": "Blobs are read in a second pass when possible; huge or opaque blobs may still be skipped."
-  },
-  "emptyCookies": {
-    "message": "No cookies for this URL."
-  },
-  "emptyLocalStorage": {
-    "message": "No keys in local storage."
-  },
-  "emptySessionStorage": {
-    "message": "No keys in session storage."
-  },
-  "emptyIndexedDB": {
-    "message": "No IndexedDB data for this origin."
-  },
   "loading": {
     "message": "Loading…"
-  },
-  "cookieLabel": {
-    "message": "$1 · $2"
-  },
-  "reloadSuggestion": {
-    "message": "Tip: reload the page after import."
-  },
-  "encryptFile": {
-    "message": "Encrypt file with password (AES-GCM)"
   },
   "exportPassword": {
     "message": "Password"
@@ -162,31 +84,19 @@
     "message": "This file is encrypted. Enter the password below."
   },
   "encryptedFileHelp": {
-    "message": "PBKDF2 + AES-GCM (same settings as export). Wrong password will fail to decrypt."
+    "message": "Enter the password you chose when you saved the backup."
   },
   "importPassword": {
     "message": "Decryption password"
   },
   "decryptImport": {
-    "message": "Decrypt and preview"
+    "message": "Unlock backup"
   },
   "decryptFailed": {
     "message": "Could not decrypt. Check the password."
   },
-  "tabProfiles": {
-    "message": "Profiles"
-  },
   "profilesEmpty": {
     "message": "No saved profiles for this site yet."
-  },
-  "profilesEmptyHint": {
-    "message": "Save the current site credentials as a profile to quickly restore them later."
-  },
-  "profileSaveCurrent": {
-    "message": "Save current as profile"
-  },
-  "profileSaveAsProfile": {
-    "message": "Save as profile"
   },
   "profileNamePlaceholder": {
     "message": "Profile name"
@@ -194,41 +104,17 @@
   "profileSaved": {
     "message": "Profile saved."
   },
-  "profileRestore": {
-    "message": "Restore"
-  },
   "profileRestored": {
     "message": "Profile restored. Reload the page if the site does not pick up changes."
   },
   "profileRestorePartialFail": {
-    "message": "Some items could not be restored. Try reloading the tab."
+    "message": "Some data could not be restored. You can use Undo last restore to recover the safety backup."
   },
   "profileDelete": {
     "message": "Delete"
   },
-  "profileDeleted": {
-    "message": "Profile deleted."
-  },
-  "profileRename": {
-    "message": "Rename"
-  },
   "profileRenamed": {
     "message": "Profile renamed."
-  },
-  "profileConfirmDeleteTitle": {
-    "message": "Delete profile?"
-  },
-  "profileConfirmDeleteBody": {
-    "message": "This will permanently delete the saved profile \"$1\"."
-  },
-  "profileConfirmRestoreTitle": {
-    "message": "Restore profile?"
-  },
-  "profileConfirmRestoreBody": {
-    "message": "Cookies, storage keys, and IndexedDB data from this profile will be applied to the current tab."
-  },
-  "profileItemCounts": {
-    "message": "$1 cookies · $2 local · $3 session · $4 IDB"
   },
   "profileSavedAt": {
     "message": "Saved $1"
@@ -236,11 +122,8 @@
   "ctxMenuSaveProfile": {
     "message": "Save site credentials (Identiti)"
   },
-  "profileNameRequired": {
-    "message": "Enter a name for this profile."
-  },
   "cmdOpenImport": {
-    "message": "Open Identiti import tab"
+    "message": "Open Identiti"
   },
   "exportAllProfiles": {
     "message": "Export all profiles"
@@ -248,63 +131,14 @@
   "exportAllProfilesDone": {
     "message": "All profiles exported."
   },
-  "profileMovedToTrash": {
-    "message": "Profile moved to trash."
+  "profilesPlaintextWarning": {
+    "message": "Exported profiles are not encrypted and contain login data. Store the file securely and do not share it."
   },
-  "profileRestoredFromTrash": {
-    "message": "Profile restored from trash."
-  },
-  "profilePermanentlyDeleted": {
-    "message": "Profile permanently deleted."
-  },
-  "profileConfirmTrashBody": {
-    "message": "Move \"$1\" to trash? You can restore it later."
-  },
-  "trashSectionTitle": {
-    "message": "Trash"
-  },
-  "trashRestore": {
-    "message": "Restore"
-  },
-  "trashDeleteForever": {
-    "message": "Delete forever"
-  },
-  "trashDeleteForeverTitle": {
-    "message": "Delete forever?"
-  },
-  "trashDeleteForeverBody": {
-    "message": "Permanently delete \"$1\"? This cannot be undone."
-  },
-  "passwordStrengthWeak": {
-    "message": "Weak password — use at least 8 characters."
-  },
-  "passwordStrengthFair": {
-    "message": "Fair password — add numbers or symbols for better security."
-  },
-  "passwordStrengthStrong": {
-    "message": "Strong password."
-  },
-  "importProgress": {
-    "message": "Applying step $1 of $2…"
-  },
-  "uiModeUseSidebar": {
-    "message": "Sidebar mode"
-  },
-  "uiModeUsePopup": {
-    "message": "Popup mode"
-  },
-  "uiModeSwitchedSidebar": {
-    "message": "Sidebar mode enabled. Click the toolbar icon to open the side panel."
-  },
-  "uiModeSwitchedPopup": {
-    "message": "Popup mode enabled. Click the toolbar icon to open the popup."
-  },
-
   "welcomeTitle": {
     "message": "Welcome to Identiti"
   },
   "welcomeBody": {
-    "message": "Save a site's login so you can bring it back instantly — on this computer or copied onto another. Nothing leaves your device. No account, no cloud."
+    "message": "Save a website’s login to switch accounts later or move it to another device. Identiti doesn’t upload your data."
   },
   "welcomeSave": {
     "message": "Save the page I'm on"
@@ -312,32 +146,15 @@
   "welcomeTransfer": {
     "message": "Move a login to another device"
   },
-  "welcomeDismiss": {
-    "message": "Got it"
-  },
-
   "dashboardTitle": {
     "message": "Your saved logins"
-  },
-  "dashboardSavedEmpty": {
-    "message": "No saved logins yet."
-  },
-  "dashboardSavedEmptyHint": {
-    "message": "Open the site you want to keep, then tap “Save this site” below."
   },
   "saveCurrentLabel": {
     "message": "Save this site"
   },
   "saveCurrentHint": {
-    "message": "Captures the full login for $1 so you can restore it anytime."
+    "message": "Save your current login for $1. Some websites may ask you to sign in again later."
   },
-  "restore": {
-    "message": "Restore"
-  },
-  "trash": {
-    "message": "Move to trash"
-  },
-
   "transferOpen": {
     "message": "Move to another device"
   },
@@ -345,7 +162,7 @@
     "message": "Move a login to another device"
   },
   "transferIntro": {
-    "message": "Export saves a file on this device only. Copy it to the other device yourself (USB, email to yourself, etc.), then open Identiti there and choose “Restore from file”."
+    "message": "Create a backup here. On the other device, open the same website and choose “Restore from file” in Identiti."
   },
   "transferExportFile": {
     "message": "Create backup file"
@@ -357,7 +174,7 @@
     "message": "Protect file with a password"
   },
   "transferProtectHelp": {
-    "message": "Anyone with the file can use your login unless you set a password."
+    "message": "Save this password somewhere safe. You’ll need it to open the backup later."
   },
   "transferPickFile": {
     "message": "Choose backup file"
@@ -366,12 +183,11 @@
     "message": "Different site"
   },
   "transferWrongSiteBody": {
-    "message": "This backup is for $1, but you are on $2. You can still restore it."
+    "message": "This backup is for $1, but you are on $2. Open the matching site to restore it."
   },
   "transferApply": {
     "message": "Restore into this page"
   },
-
   "advancedOpen": {
     "message": "Advanced"
   },
@@ -390,8 +206,187 @@
   "advancedReloadHint": {
     "message": "After restoring, reload the page if the site does not update."
   },
-
   "localFirstBadge": {
     "message": "On this device · nothing uploaded"
+  },
+  "storageReadWarning": {
+    "message": "Could not read the page's storage. Reload the site tab, wait for it to finish loading, and try again."
+  },
+  "idbReadFailed": {
+    "message": "Couldn’t read data that this site stores in your browser. Reload the site and try again."
+  },
+  "profilesBundleImported": {
+    "message": "Imported $1 profile(s); skipped $2 invalid."
+  },
+  "transferExportIncludesIdb": {
+    "message": "The file contains the login data this site stores in your browser."
+  },
+  "undoLastRestore": {
+    "message": "Undo last restore"
+  },
+  "reloadTabNow": {
+    "message": "Reload tab"
+  },
+  "environmentMismatch": {
+    "message": "This login was saved on a different browser or device. The site may ask you to sign in again."
+  },
+  "activeBadge": {
+    "message": "Active"
+  },
+  "switchAccount": {
+    "message": "Switch"
+  },
+  "searchAccountsPlaceholder": {
+    "message": "Search accounts…"
+  },
+  "rename": {
+    "message": "Rename"
+  },
+  "renameTitle": {
+    "message": "Rename account"
+  },
+  "renameDescription": {
+    "message": "Enter a new name for this account."
+  },
+  "renameSave": {
+    "message": "Save name"
+  },
+  "prepareNewLogin": {
+    "message": "Log in with another account"
+  },
+  "prepareNewLoginHint": {
+    "message": "Save a safety backup, then clear the login on this site."
+  },
+  "prepareNewLoginSuccess": {
+    "message": "Page is ready! Log into your new account, then open Identiti to save it."
+  },
+  "prepareNewLoginPartial": {
+    "message": "The site may still be signed in. After it reloads, sign out on the site if needed, or use Undo last restore."
+  },
+  "autoBackupReassurance": {
+    "message": "Current session is auto-backed up before each switch."
+  },
+  "welcomeFeatSwitch": {
+    "message": "1-Click switch between multiple accounts on this site"
+  },
+  "welcomeFeatCheckpoint": {
+    "message": "Save the login data websites keep in your browser"
+  },
+  "welcomeFeatTransfer": {
+    "message": "Move a saved login to another browser or device"
+  },
+  "noAccountsFound": {
+    "message": "No matching accounts found."
+  },
+  "expandSaveAccount": {
+    "message": "Save current session as new account"
+  },
+  "reapply": {
+    "message": "Apply to tab"
+  },
+  "reapplyHint": {
+    "message": "Apply this account's session to the current tab or container"
+  },
+  "otherSitesAccounts": {
+    "message": "Accounts from other sites"
+  },
+  "viewOtherSitesAccounts": {
+    "message": "View accounts from other sites"
+  },
+  "hideOtherSitesAccounts": {
+    "message": "Hide accounts from other sites"
+  },
+  "deleteAll": {
+    "message": "Delete all"
+  },
+  "deleteAllOtherSites": {
+    "message": "Delete all accounts from other sites"
+  },
+  "deleteAllOtherSitesConfirm": {
+    "message": "Move all $1 account(s) from other sites to the trash? You can restore them later."
+  },
+  "profilesDeletedAll": {
+    "message": "All other-site profiles moved to the trash."
+  },
+  "backupFailed": {
+    "message": "Could not create a safety backup, so nothing was changed."
+  },
+  "siteOperationBusy": {
+    "message": "Identiti is already working in another window. Try again when it finishes."
+  },
+  "profileTrashed": {
+    "message": "Profile moved to trash."
+  },
+  "profileRestoredFromTrash": {
+    "message": "Profile restored from trash."
+  },
+  "profileDeletedForever": {
+    "message": "Profile permanently deleted."
+  },
+  "profileDeleteConfirm": {
+    "message": "Move “$1” to the trash? You can restore it later."
+  },
+  "trashSectionTitle": {
+    "message": "Trash"
+  },
+  "trashShow": {
+    "message": "Show"
+  },
+  "trashHide": {
+    "message": "Hide"
+  },
+  "trashRestore": {
+    "message": "Restore"
+  },
+  "trashDeleteForever": {
+    "message": "Delete forever"
+  },
+  "trashDeleteForeverTitle": {
+    "message": "Delete forever?"
+  },
+  "trashDeleteForeverBody": {
+    "message": "Permanently delete “$1”? This cannot be undone."
+  },
+  "errorBoundaryTitle": {
+    "message": "Something went wrong."
+  },
+  "errorBoundaryBody": {
+    "message": "Reload the popup and try again."
+  },
+  "close": {
+    "message": "Close"
+  },
+  "notifications": {
+    "message": "Identiti notifications"
+  },
+  "backupWebsite": {
+    "message": "Website in this backup"
+  },
+  "prepareNewLoginConfirm": {
+    "message": "Identiti will back up and clear the current login, then reload the site. Your saved logins stay in Identiti. You can undo from this tab."
+  },
+  "siteWorking": {
+    "message": "Working on this site… Keep Identiti open until it’s done."
+  },
+  "transferPlaintextWarning": {
+    "message": "This file can give someone access to your login. Use a password if you plan to copy or share the file."
+  },
+  "siteChanged": {
+    "message": "The page changed. Open Identiti again on the website you want to use."
+  },
+  "incompatibleCookies": {
+    "message": "Some login data can’t be restored on this site or in this browser. Nothing was changed."
+  },
+  "unsupportedSiteData": {
+    "message": "This site stores some data that Identiti can’t back up. Nothing was changed."
+  },
+  "safetyBackupName": {
+    "message": "Safety backup"
+  },
+  "undoUnavailable": {
+    "message": "Undo is no longer available here. A newer change may have been made in another tab."
+  },
+  "undoSchemaKept": {
+    "message": "The backup’s added data was removed. Empty structures created during restore were left in place."
   }
 }
